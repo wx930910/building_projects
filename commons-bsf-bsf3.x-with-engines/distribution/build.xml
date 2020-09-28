@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+
+<!-- ***NOTE*** temporary hack till can work out how to use the Maven assembly plugin -->
+
+<project name="Create-bsf-all">
+
+    <target name="create-bsf-all">
+
+        <mkdir dir="${basedir}/target/bsf-all"/>
+        <unzip src="${basedir}/../bsf-api/target/bsf-api-${bsf.version}.jar" dest="${basedir}/target/bsf-all" overwrite="false"/>
+        <unzip src="${basedir}/../bsf-engines/target/bsf-engines-${bsf.version}.jar" dest="${basedir}/target/bsf-all" overwrite="false"/>
+        <unzip src="${basedir}/../bsf-utils/target/bsf-utils-${bsf.version}.jar" dest="${basedir}/target/bsf-all" overwrite="false"/>
+
+        <!-- Proper versions will be created in the META-INF directory -->
+        <delete file="${basedir}/target/bsf-all/LICENSE"/>
+        <delete file="${basedir}/target/bsf-all/NOTICE"/>
+
+        <copy file="${basedir}/src/bin/LICENSE" tofile="${basedir}/target/bsf-all/META-INF/LICENSE" overwrite="true" />
+        <copy file="${basedir}/src/bin/NOTICE" tofile="${basedir}/target/bsf-all/META-INF/--NOTICE" overwrite="true" />
+
+        <!-- Now package all that up into a single jar -->
+        <jar destfile="${basedir}/target/bsf-all-${bsf.version}.jar" basedir="${basedir}/target/bsf-all">
+            <manifest>
+                <attribute name="Main-Class" value="org.apache.bsf.Main"/>
+                <attribute name="Extension-Name" value="org.apache.bsf"/>
+                <attribute name="Implementation-Title" value="Apache BSF"/>
+                <attribute name="Implementation-Vendor" value="Apache Software Foundation"/>
+                <attribute name="Implementation-Vendor-Id" value="org.apache"/>
+                <attribute name="Implementation-Version" value="${bsf.version}"/>
+                <attribute name="X-Compile-Source-JDK" value="${maven.compile.source}"/>
+                <attribute name="X-Compile-Target-JDK" value="${maven.compile.target}"/>
+            </manifest>
+        </jar>
+
+        <!-- Remove work directory -->
+        <delete dir="${basedir}/target/bsf-all"/>
+
+        <!-- these are required for the mvn install command to work correctly -->
+        <condition property="maven.suffix" value="">
+            <os family="unix"/>
+        </condition>
+        <condition property="maven.suffix" value=".bat">
+            <os family="windows"/>
+        </condition>
+
+        <property name="mvn.path" value="" description="Allows override in case mvn is not on the default path"/>
+        <exec executable="${mvn.path}mvn${maven.suffix}" dir="${basedir}" failonerror="true">
+            <arg line="install:install-file -DgroupId=org.apache.bsf -DartifactId=bsf-all -Dversion=${bsf.version} -Dpackaging=jar -DgeneratePom=false -Dfile=${basedir}/target/bsf-all-${bsf.version}.jar"/>
+        </exec>
+
+    </target>
+
+</project>

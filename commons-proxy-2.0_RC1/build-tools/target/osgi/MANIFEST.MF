@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744602970
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: Provide common setup, from http://maven.apache.org/p
+ lugins/maven-checkstyle-plugin/examples/multi-module-config.html
+Bundle-DocURL: http://commons.apache.org/proxy/commons-proxy2-build-tool
+ s/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Commons Proxy Build Tools
+Bundle-SymbolicName: org.apache.commons.proxy
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.proxy2;version="2.0"
+Include-Resource: org/apache/commons/proxy2/checkstyle.xml=src/main/reso
+ urces/org/apache/commons/proxy2/checkstyle.xml,org/apache/commons/proxy
+ 2/findbugs-exclude-filter.xml=src/main/resources/org/apache/commons/pro
+ xy2/findbugs-exclude-filter.xml
+Tool: Bnd-2.1.0.20130426-122213

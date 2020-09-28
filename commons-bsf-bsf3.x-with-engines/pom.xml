@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    * Licensed to the Apache Software Foundation (ASF) under one
+    * or more contributor license agreements.  See the NOTICE file
+    * distributed with this work for additional information
+    * regarding copyright ownership.  The ASF licenses this file
+    * to you under the Apache License, Version 2.0 (the
+    * "License"); you may not use this file except in compliance
+    * with the License.  You may obtain a copy of the License at
+    * 
+    *   http://www.apache.org/licenses/LICENSE-2.0
+    * 
+    * Unless required by applicable law or agreed to in writing,
+    * software distributed under the License is distributed on an
+    * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    * KIND, either express or implied.  See the License for the
+    * specific language governing permissions and limitations
+    * under the License.    
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>7</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.apache.bsf</groupId>
+    <artifactId>parent</artifactId>
+    <version>3.1-SNAPSHOT</version>
+
+    <name>Apache BSF</name>
+    <description>Apache BSF</description>
+
+    <packaging>pom</packaging>
+    <url>http://jakarta.apache.org/bsf/</url>
+
+    <properties>
+        <bsf.version>${project.version}</bsf.version>
+        <junit.version>3.8.2</junit.version>
+        <maven.compile.source>1.4</maven.compile.source>
+        <maven.compile.target>1.4</maven.compile.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- compiler and surefire plugin settings for "java" profiles -->
+        <jakarta.compiler.fork>false</jakarta.compiler.fork>
+        <jakarta.compiler.compilerVersion />
+        <jakarta.compiler.javac />
+        <jakarta.surefire.java />
+        <!-- default to same version as Apache Parent V7 -->
+        <jakarta.remote-resources.version>1.1</jakarta.remote-resources.version>
+    </properties>
+
+    <issueManagement>
+        <url>http://issues.apache.org/jira/browse/BSF</url>
+    </issueManagement>
+
+    <mailingLists>
+        <mailingList>
+            <name>Apache Jakarta Developer List</name>
+            <subscribe>dev-subscribe@jakarta.apache.org</subscribe>
+            <unsubscribe>dev-unsubscribe@jakarta.apache.org</unsubscribe>
+            <post>dev@jakarta.apache.org</post>
+            <archive>http://mail-archives.apache.org/mod_mbox/jakarta-dev/</archive>
+        </mailingList>
+        <mailingList>
+            <name>Apache BSF User List</name>
+            <subscribe>bsf-user-subscribe@jakarta.apache.org</subscribe>
+            <unsubscribe>bsf-user-unsubscribe@jakarta.apache.org</unsubscribe>
+            <post>bsf-user@jakarta.apache.org</post>
+            <archive>http://mail-archives.apache.org/mod_mbox/jakarta-bsf-user/</archive>
+        </mailingList>
+        <mailingList>
+            <name>Apache BSF Developer List (archive only, now part of Jakarta dev)</name>
+            <archive>http://mail-archives.apache.org/mod_mbox/jakarta-bsf-dev/</archive>
+        </mailingList>
+    </mailingLists>
+
+    <inceptionYear>1999</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:svn:http://svn.apache.org/repos/asf/jakarta/bsf/branches/bsf3.x</connection>
+        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/jakarta/bsf/branches/bsf3.x</developerConnection>
+        <url>http://svn.apache.org/viewvc/jakarta/bsf/branches/bsf3.x/</url>
+    </scm>
+
+    <organization>
+        <name>The Apache Software Foundation</name>
+        <url>http://www.apache.org/</url>
+    </organization>
+
+    <build>
+        <defaultGoal>install</defaultGoal>
+        <pluginManagement>
+          <plugins>
+            <!-- Need at least 1.0 to support gpg.homedir property -->
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-gpg-plugin</artifactId>
+              <version>1.0</version>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-clean-plugin</artifactId>
+              <version>2.4</version>
+            </plugin>
+            <plugin>
+              <artifactId>maven-site-plugin</artifactId>
+              <version>2.1</version>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-resources-plugin</artifactId>
+              <version>2.4.2</version>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-remote-resources-plugin</artifactId>
+              <version>${jakarta.remote-resources.version}</version>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-javadoc-plugin</artifactId>
+               <configuration>
+                <!-- keep only errors and warnings -->
+                <quiet>true</quiet>
+                <encoding>${project.build.sourceEncoding}</encoding>
+                <docEncoding>${project.reporting.outputEncoding}</docEncoding>
+                <archive>
+                  <manifest>
+                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                  </manifest>
+                  <manifestEntries>
+                    <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
+                  </manifestEntries>
+                </archive>
+              </configuration>
+            </plugin>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-source-plugin</artifactId>
+              <configuration>
+                <archive>
+                  <manifest>
+                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                  </manifest>
+                  <manifestEntries>
+                    <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
+                  </manifestEntries>
+                </archive>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.1</version>
+                <configuration>
+                    <source>${maven.compile.source}</source>
+                    <target>${maven.compile.target}</target>
+                    <fork>${jakarta.compiler.fork}</fork>
+                    <compilerVersion>${jakarta.compiler.compilerVersion}</compilerVersion>
+                    <executable>${jakarta.compiler.javac}</executable>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.5</version>
+                <configuration>
+                  <includes>
+                    <include>**/*Test*.java</include>
+                  </includes>
+                  <jvm>${jakarta.surefire.java}</jvm>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Extension-Name>${pom.groupId}</Extension-Name>
+                            <Specification-Title>${pom.artifactId}</Specification-Title>
+                            <Specification-Vendor>Apache Software Foundation</Specification-Vendor>
+                            <Specification-Version>${pom.version}</Specification-Version>
+                            <Implementation-Title>Apache BSF</Implementation-Title>
+                            <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
+                            <Implementation-Vendor>Apache Software Foundation</Implementation-Vendor>
+                            <Implementation-Version>${pom.version}</Implementation-Version>
+                            <X-Compile-Source-JDK>${maven.compile.source}</X-Compile-Source-JDK>
+                            <X-Compile-Target-JDK>${maven.compile.target}</X-Compile-Target-JDK>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-5</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>distribution/bin.xml</descriptor>
+                        <descriptor>distribution/src.xml</descriptor>
+                    </descriptors>
+                    <finalName>bsf-${bsf.version}</finalName>
+                    <tarLongFileMode>gnu</tarLongFileMode>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <inherited>false</inherited>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.6.1</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>2.1</version>
+                <inherited>false</inherited>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <modules>
+        <module>bsf-api</module>
+        <module>bsf-engines</module>
+        <module>bsf-utils</module>
+        <module>distribution</module>
+        <module>testing</module>
+    </modules>
+
+ <profiles>
+     <!--
+      | Remote resources 1.1 (defined in Apache Parent V7) requires Java 1.5+ 
+      -->
+     <profile>
+       <id>JDK14</id>
+       <activation>
+         <jdk>1.4</jdk>
+       </activation>
+       <properties>
+           <jakarta.remote-resources.version>1.0</jakarta.remote-resources.version>
+       </properties>
+     </profile>
+    <!--
+     | Stop the JDK1.6+ ScriptManager failing when it cannot find 
+     | the class org/mozilla/javascript/ContextFactory.
+     -->
+        <profile>
+            <id>JDK16minimum</id>
+            <activation>
+                <jdk>[1.6,)</jdk>
+            </activation>
+            <dependencies>
+                 <dependency>
+                     <groupId>rhino</groupId>
+                     <artifactId>js</artifactId>
+                     <version>1.6R5</version>
+                     <scope>test</scope>
+                 </dependency>
+            </dependencies>
+        </profile>
+    <!--
+       Profile for running the build using JDK 1.4
+       (JAVA_1_4_HOME needs to be defined, e.g. in settings.xml or an environment variable)
+      -->
+    <profile>
+      <id>java-1.4</id>
+      <properties>
+        <jakarta.compiler.fork>true</jakarta.compiler.fork>
+        <jakarta.compiler.compilerVersion>1.4</jakarta.compiler.compilerVersion>
+        <jakarta.compiler.javac>${JAVA_1_4_HOME}/bin/javac</jakarta.compiler.javac>
+        <jakarta.surefire.java>${JAVA_1_4_HOME}/bin/java</jakarta.surefire.java>
+      </properties>
+    </profile>
+
+    <!--
+       Profile for running the build using JDK 1.5
+       (JAVA_1_5_HOME needs to be defined, e.g. in settings.xml or an environment variable)
+      -->
+    <profile>
+      <id>java-1.5</id>
+      <properties>
+        <jakarta.compiler.fork>true</jakarta.compiler.fork>
+        <jakarta.compiler.compilerVersion>1.5</jakarta.compiler.compilerVersion>
+        <jakarta.compiler.javac>${JAVA_1_5_HOME}/bin/javac</jakarta.compiler.javac>
+        <jakarta.surefire.java>${JAVA_1_5_HOME}/bin/java</jakarta.surefire.java>
+      </properties>
+    </profile>
+
+    <!--
+       Profile for running the build using JDK 1.6
+       (JAVA_1_6_HOME needs to be defined, e.g. in settings.xml or an environment variable)
+      -->
+    <profile>
+        <id>java-1.6</id>
+        <properties>
+          <jakarta.compiler.fork>true</jakarta.compiler.fork>
+          <jakarta.compiler.compilerVersion>1.6</jakarta.compiler.compilerVersion>
+          <jakarta.compiler.javac>${JAVA_1_6_HOME}/bin/javac</jakarta.compiler.javac>
+          <jakarta.surefire.java>${JAVA_1_6_HOME}/bin/java</jakarta.surefire.java>
+        </properties>
+    <!--
+     | Stop the JDK1.6 ScriptManager failing when it cannot find 
+     | the class org/mozilla/javascript/ContextFactory.
+     -->
+            <dependencies>
+                 <dependency>
+                     <groupId>rhino</groupId>
+                     <artifactId>js</artifactId>
+                     <version>1.6R5</version>
+                     <scope>test</scope>
+                 </dependency>
+            </dependencies>
+      </profile>
+
+    <!--
+       Profile for running the build using JDK 1.7
+       (JAVA_1_7_HOME needs to be defined, e.g. in settings.xml or an environment variable)
+      -->
+    <profile>
+        <id>java-1.7</id>
+        <properties>
+          <jakarta.compiler.fork>true</jakarta.compiler.fork>
+          <jakarta.compiler.compilerVersion>1.7</jakarta.compiler.compilerVersion>
+          <jakarta.compiler.javac>${JAVA_1_7_HOME}/bin/javac</jakarta.compiler.javac>
+          <jakarta.surefire.java>${JAVA_1_7_HOME}/bin/java</jakarta.surefire.java>
+        </properties>
+    <!--
+     | Stop the JDK1.7 ScriptManager failing when it cannot find 
+     | the class org/mozilla/javascript/ContextFactory.
+     -->
+            <dependencies>
+                 <dependency>
+                     <groupId>rhino</groupId>
+                     <artifactId>js</artifactId>
+                     <version>1.6R5</version>
+                     <scope>test</scope>
+                 </dependency>
+            </dependencies>
+      </profile>
+
+    <!-- The apache-release profile is not suitable (it creates extra artifacts) so provide our own -->
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <!-- We want to sign the artifact, the POM, and all attached artifacts -->
+          <plugin>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <configuration>
+              <passphrase>${gpg.passphrase}</passphrase>
+            </configuration>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-install-plugin</artifactId>
+            <configuration>
+              <createChecksum>true</createChecksum>
+            </configuration>
+          </plugin>
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>create-source-jar</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-release-plugin</artifactId>
+            <configuration>
+              <!-- Pass these arguments to the deploy plugin. -->
+              <arguments>-Prelease</arguments>
+            </configuration>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>create-javadoc-jar</id>
+                <goals>
+                  <goal>javadoc</goal>
+                  <goal>jar</goal>
+                </goals>
+                <phase>package</phase>
+              </execution>
+            </executions>
+            <configuration>
+              <source>${maven.compile.source}</source>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- 
+     | Profile to allow testing of deploy phase
+     | e.g.
+     | mvn deploy -Ptest-deploy -Prelease -Dgpg.skip
+     -->
+    <profile>
+      <id>test-deploy</id>
+      <properties>
+        <altDeploymentRepository>id::default::file:target/deploy</altDeploymentRepository>
+      </properties>
+    </profile>
+ </profiles>
+</project>

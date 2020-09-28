@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744604370
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: Interface-based proxies using the core JDK Proxy mec
+ hanism
+Bundle-DocURL: http://commons.apache.org/proxy/commons-proxy2-jdk/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Commons Proxy JDK Proxies Module
+Bundle-SymbolicName: org.apache.commons.proxy
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.proxy2.jdk;version="2.0"
+Import-Package: org.apache.commons.lang3,org.apache.commons.proxy2,org.a
+ pache.commons.proxy2.impl
+Include-Resource: META-INF/services/org.apache.commons.proxy2.ProxyFacto
+ ry=src/main/resources/META-INF/services/org.apache.commons.proxy2.Proxy
+ Factory
+Tool: Bnd-2.1.0.20130426-122213

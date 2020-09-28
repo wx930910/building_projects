@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744603594
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: Java library for dynamic proxying
+Bundle-DocURL: http://commons.apache.org/proxy/commons-proxy2-core/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Commons Proxy Core
+Bundle-SymbolicName: org.apache.commons.proxy
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.proxy2;version="2.0",org.apache.commo
+ ns.proxy2.exception;version="2.0",org.apache.commons.proxy2.impl;versio
+ n="2.0",org.apache.commons.proxy2.interceptor;version="2.0",org.apache.
+ commons.proxy2.interceptor.matcher;version="2.0",org.apache.commons.pro
+ xy2.interceptor.matcher.argument;version="2.0",org.apache.commons.proxy
+ 2.interceptor.matcher.invocation;version="2.0",org.apache.commons.proxy
+ 2.invoker;version="2.0",org.apache.commons.proxy2.invoker.recorder;vers
+ ion="2.0",org.apache.commons.proxy2.provider;version="2.0",org.apache.c
+ ommons.proxy2.serialization;version="2.0",org.apache.commons.proxy2.stu
+ b;version="2.0"
+Import-Package: org.apache.commons.lang3,org.apache.commons.lang3.builde
+ r,org.apache.commons.lang3.exception,org.apache.commons.lang3.reflect,o
+ rg.apache.commons.lang3.tuple
+Tool: Bnd-2.1.0.20130426-122213

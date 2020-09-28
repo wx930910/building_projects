@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744386642
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: Apache Commons JCI compiler implementation for JDK 1
+ .6 and up.
+Bundle-DocURL: http://commons.apache.org/proper/commons-jci/commons-jci-
+ jsr199/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache Commons JCI compiler-jsr199
+Bundle-SymbolicName: org.apache.commons.jci-jsr166
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 1.1.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.jci.compilers;version="1.1"
+Import-Package: javax.tools,org.apache.commons.jci.problems,org.apache.c
+ ommons.jci.readers,org.apache.commons.jci.stores,org.apache.commons.log
+ ging
+Include-Resource: LICENSE.txt=src/main/resources/LICENSE.txt,NOTICE.txt=
+ src/main/resources/NOTICE.txt
+Private-Package: LICENSE.txt,NOTICE.txt
+Tool: Bnd-2.1.0.20130426-122213

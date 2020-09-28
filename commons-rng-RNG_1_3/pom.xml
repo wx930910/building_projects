@@ -1,0 +1,645 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-parent</artifactId>
+    <version>49</version>
+  </parent>
+
+  <groupId>org.apache.commons</groupId>
+  <artifactId>commons-rng-parent</artifactId>
+  <version>1.3</version>
+  <packaging>pom</packaging>
+  <name>Apache Commons RNG</name>
+  <description>The Apache Commons RNG project provides pure-Java implementation of pseudo-random generators.</description>
+  <url>https://commons.apache.org/proper/commons-rng/</url>
+  <inceptionYear>2016</inceptionYear>
+
+  <properties>
+    <!-- Do not change: "rng" is the name of the component even if the
+         name of the base package evolves with major release numbers
+         (see "commons.osgi.symbolicName", below). -->
+    <commons.componentid>rng</commons.componentid>
+    <!-- OSGi -->
+    <commons.osgi.symbolicName>org.apache.commons.rng.parent</commons.osgi.symbolicName>
+    <commons.osgi.export>org.apache.commons.rng.parent</commons.osgi.export>
+    <!-- Java 9+ -->
+    <commons.automatic.module.name>org.apache.commons.rng.parent</commons.automatic.module.name>
+    <!-- do not use snapshot suffix here -->
+    <commons.release.version>1.3</commons.release.version>
+    <commons.rc.version>RC1</commons.rc.version>
+    <commons.release.desc>(requires Java 6+)</commons.release.desc>
+    <commons.binary.suffix>-bin</commons.binary.suffix>
+
+    <commons.jira.id>RNG</commons.jira.id>
+    <commons.jira.pid>12320623</commons.jira.pid>
+    <commons.encoding>UTF-8</commons.encoding>
+    <maven.compiler.source>1.6</maven.compiler.source>
+    <maven.compiler.target>1.6</maven.compiler.target>
+    <rng.pmd.version>3.12.0</rng.pmd.version>
+    <rng.pmd.dep.version>6.14.0</rng.pmd.dep.version>
+    <rng.checkstyle.version>3.0.0</rng.checkstyle.version>
+    <rng.checkstyle.dep.version>8.20</rng.checkstyle.dep.version>
+    <rng.mathjax.version>2.7.2</rng.mathjax.version>
+    <!-- Workaround to avoid duplicating config files. -->
+    <rng.parent.dir>${basedir}</rng.parent.dir>
+
+    <!-- Version fix to support Java 11 site generation using parent-48 -->
+    <commons.spotbugs.version>3.1.11</commons.spotbugs.version>
+    <!-- Fix to avoid JXR 3.0.0 forking the lifecycle phase 'compile' during site report
+       jxr:aggregate. If compile is forked it fails when building the Java 9 modules that
+       depend on other packages. -->
+    <commons.jxr.version>2.5</commons.jxr.version>
+
+    <commons.jacoco.haltOnFailure>false</commons.jacoco.haltOnFailure>
+
+    <commons.site.path>rng</commons.site.path>
+    <commons.scmPubUrl>https://svn.apache.org/repos/infra/websites/production/commons/content/proper/commons-rng</commons.scmPubUrl>
+    <commons.scmPubCheckoutDirectory>site-content</commons.scmPubCheckoutDirectory>
+
+    <!-- Temporary fix to replace svn-based build number with git-based build number -->
+    <buildnumber.skip>true</buildnumber.skip>
+    <rng.jgit.buildnumber.version>1.2.10</rng.jgit.buildnumber.version>
+    <implementation.build>${git.revision}; ${maven.build.timestamp}</implementation.build>
+
+    <!-- Override default buildNumber timestamp format, needed for coveralls plugin -->
+    <maven.buildNumber.timestampFormat>{0,date,yyyy-MM-dd HH:mm:ssZ}</maven.buildNumber.timestampFormat>
+
+    <!--
+        Override so that "mvn commons:download-page" will generates a web page
+        referring to the files created by the "dist-archive" module.
+        Temporary workaround?
+    -->
+    <commons.release.name>commons-rng-${project.version}</commons.release.name>
+    <!-- Java8+ requires additional Javadoc qualifier for MathJax (default to empty). -->
+    <allowscript.javadoc.qualifier></allowscript.javadoc.qualifier>
+    <!-- Invalid flag for old javadoc versions (default to empty). -->
+    <doclint.javadoc.qualifier></doclint.javadoc.qualifier>
+  </properties>
+
+  <modules>
+    <module>commons-rng-client-api</module>
+    <module>commons-rng-core</module>
+    <module>commons-rng-simple</module>
+    <module>commons-rng-sampling</module>
+    <!--
+        The examples are built only upon explicit request (requires Java 1.7+).
+        See profiles: "commons-rng-examples"; "release"
+    -->
+  </modules>
+
+  <scm>
+    <connection>scm:git:http://gitbox.apache.org/repos/asf/commons-rng.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/commons-rng.git</developerConnection>
+    <url>https://gitbox.apache.org/repos/asf?p=commons-rng.git</url>
+  </scm>
+
+  <issueManagement>
+    <system>jira</system>
+    <url>https://issues.apache.org/jira/browse/RNG</url>
+  </issueManagement>
+
+  <distributionManagement>
+    <site>
+      <id>apache.website</id>
+      <name>Apache Commons Site</name>
+      <url>scm:svn:https://svn.apache.org/repos/infra/websites/production/commons/content/proper/commons-rng/</url>
+    </site>
+  </distributionManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <defaultGoal>clean verify apache-rat:check clirr:check checkstyle:check pmd:check spotbugs:check javadoc:javadoc</defaultGoal>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive combine.children="append">
+            <manifestEntries>
+              <!-- Java 9 -->
+              <Automatic-Module-Name>${commons.automatic.module.name}</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-Xlint:all,-options,-path</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Fix for OpenJDK 8 now validating class-path attributes in Jar manifests. -->
+          <!-- See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=912333#63 -->
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+          <excludes>
+            <exclude>**/*AbstractTest.java</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-scm-publish-plugin</artifactId>
+        <configuration>
+          <ignorePathsToDelete>
+            <ignorePathToDelete>javadocs</ignorePathToDelete>
+          </ignorePathsToDelete>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${commons.spotbugs.version}</version>
+        <configuration>
+          <threshold>Normal</threshold>
+          <effort>Default</effort>
+          <excludeFilterFile>${rng.parent.dir}/src/main/resources/spotbugs/spotbugs-exclude-filter.xml</excludeFilterFile>
+        </configuration>
+      </plugin>
+      <!-- maven-checkstyle-plugin runs in JDK 8+ profile so not included here -->
+      <plugin>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${rng.pmd.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>net.sourceforge.pmd</groupId>
+            <artifactId>pmd-core</artifactId>
+            <version>${rng.pmd.dep.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>net.sourceforge.pmd</groupId>
+            <artifactId>pmd-java</artifactId>
+            <version>${rng.pmd.dep.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <targetJdk>${maven.compiler.target}</targetJdk>
+          <skipEmptyReport>false</skipEmptyReport>
+          <analysisCache>true</analysisCache>
+          <rulesets>
+            <ruleset>${rng.parent.dir}/src/main/resources/pmd/pmd-ruleset.xml</ruleset>
+          </rulesets>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+        <!--
+          Needed for command-line access, e.g mvn apache-rat:rat and mvn apache-rat:check
+          Below should agree with config in <reporting> section, so the site
+          gets consistent output.
+        -->
+          <excludes combine.children="append">
+            <!-- version 0.8 of apache-rat-plugin does not exclude properly
+                 some default development tools files (see RAT-126) -->
+            <exclude>.ekstazi/**</exclude>
+            <exclude>**/site-content/**</exclude>
+            <exclude>**/.classpath</exclude>
+            <exclude>**/.project</exclude>
+            <exclude>**/.settings/**</exclude>
+            <exclude>**/.checkstyle</exclude>
+            <exclude>**/target/**</exclude>
+            <exclude>src/site/resources/release-notes/RELEASE-NOTES-*.txt</exclude>
+            <exclude>src/site/resources/txt/userguide/stress/**</exclude>
+            <exclude>dist-archive/**</exclude>
+            <exclude>**/*.patch</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <!-- NOTE: javadoc config must also be set under <reporting> -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!-- Enable MathJax -->
+          <additionalOptions>${doclint.javadoc.qualifier} ${allowscript.javadoc.qualifier} -header '&lt;script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/${rng.mathjax.version}/MathJax.js?config=TeX-AMS-MML_HTMLorMML"&gt;&lt;/script&gt;'</additionalOptions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <skipAssembly>true</skipAssembly>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <!--  Should agree with apache-rat-plugin config under <build> -->
+          <excludes combine.children="append">
+            <!-- version 0.8 of apache-rat-plugin does not exclude properly
+                 some default development tools files (see RAT-126) -->
+            <exclude>.ekstazi/**</exclude>
+            <exclude>**/site-content/**</exclude>
+            <exclude>**/.classpath</exclude>
+            <exclude>**/.project</exclude>
+            <exclude>**/.settings/**</exclude>
+            <exclude>**/.checkstyle</exclude>
+            <exclude>**/target/**</exclude>
+            <exclude>src/site/resources/release-notes/RELEASE-NOTES-*.txt</exclude>
+            <exclude>src/site/resources/txt/userguide/stress/**</exclude>
+            <exclude>dist-archive/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-changes-plugin</artifactId>
+        <version>${commons.changes.version}</version>
+        <configuration>
+          <xmlPath>${basedir}/src/changes/changes.xml</xmlPath>
+          <columnNames>Fix Version,Key,Component,Summary,Type,Resolution,Status</columnNames>
+          <!-- Sort cols in natural order when using JQL for JIRA 5.1 -->
+          <sortColumnNames>Fix Version DESC,Type,Key DESC</sortColumnNames>
+          <resolutionIds>Fixed,Implemented</resolutionIds>
+          <statusIds>Resolved,Closed</statusIds>
+          <!-- Don't include sub-task -->
+          <typeIds>Bug,New Feature,Task,Improvement,Wish,Test</typeIds>
+          <!-- For JIRA >= 5.1 -->
+          <useJql>true</useJql>
+          <onlyCurrentVersion>${commons.changes.onlyCurrentVersion}</onlyCurrentVersion>
+          <maxEntries>${commons.changes.maxEntries}</maxEntries>
+          <runOnlyAtExecutionRoot>${commons.changes.runOnlyAtExecutionRoot}</runOnlyAtExecutionRoot>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>changes-report</report>
+              <report>jira-report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${commons.spotbugs.version}</version>
+        <configuration>
+          <threshold>Normal</threshold>
+          <effort>Default</effort>
+          <excludeFilterFile>${rng.parent.dir}/src/main/resources/spotbugs/spotbugs-exclude-filter.xml</excludeFilterFile>
+        </configuration>
+      </plugin>
+      <!-- maven-checkstyle-plugin runs in JDK 8+ profile so not included here -->
+      <plugin>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>${rng.pmd.version}</version>
+        <configuration>
+          <targetJdk>${maven.compiler.target}</targetJdk>
+          <skipEmptyReport>false</skipEmptyReport>
+          <analysisCache>true</analysisCache>
+          <rulesets>
+            <ruleset>${rng.parent.dir}/src/main/resources/pmd/pmd-ruleset.xml</ruleset>
+          </rulesets>
+        </configuration>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>pmd</report>
+              <report>cpd</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
+        <!-- NOTE: javadoc config must also be set under <build> -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!-- Enable MathJax -->
+          <additionalOptions>${doclint.javadoc.qualifier} ${allowscript.javadoc.qualifier} -header '&lt;script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/${rng.mathjax.version}/MathJax.js?config=TeX-AMS-MML_HTMLorMML"&gt;&lt;/script&gt;'</additionalOptions>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </reporting>
+
+  <profiles>
+    <profile>
+      <id>jgit-buildnumber</id>
+      <activation>
+        <file>
+          <exists>.git</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>ru.concerteza.buildnumber</groupId>
+            <artifactId>maven-jgit-buildnumber-plugin</artifactId>
+            <version>${rng.jgit.buildnumber.version}</version>
+            <executions>
+              <execution>
+                <phase>generate-resources</phase>
+                <goals>
+                  <goal>extract-buildnumber</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>setup-checkout</id>
+      <activation>
+        <file>
+          <missing>site-content</missing>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.7</version>
+            <executions>
+              <execution>
+                <id>prepare-checkout</id>
+                <phase>pre-site</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <exec executable="svn">
+                      <arg line="checkout --depth immediates ${commons.scmPubUrl} ${commons.scmPubCheckoutDirectory}"/>
+                    </exec>
+
+                    <exec executable="svn">
+                      <arg line="update --set-depth exclude ${commons.scmPubCheckoutDirectory}/javadocs"/>
+                    </exec>
+
+                    <pathconvert pathsep=" " property="dirs">
+                      <dirset dir="${commons.scmPubCheckoutDirectory}" includes="*"/>
+                    </pathconvert>
+                    <exec executable="svn">
+                      <arg line="update --set-depth infinity ${dirs}"/>
+                    </exec>
+                  </tasks>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- Ekstazi (www.ekstazi.org) profile to optimize regression testing -->
+    <profile>
+      <id>ekstazi</id>
+      <activation>
+        <property>
+          <name>ekstazi</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.ekstazi</groupId>
+            <artifactId>ekstazi-maven-plugin</artifactId>
+            <version>4.4.0</version>
+            <configuration>
+              <forcefailing>true</forcefailing>
+            </configuration>
+            <executions>
+              <execution>
+                <id>ekstazi</id>
+                <goals>
+                  <goal>select</goal>
+                  <goal>restore</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <excludesFile>${java.io.tmpdir}/${user.name}EkstaziExcludes</excludesFile>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>travis</id>
+      <activation>
+        <property>
+          <name>env.TRAVIS</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>${commons.jacoco.version}</version>
+          </plugin>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <!-- Version for JDK 6 target. -->
+            <version>3.1.0</version>
+            <configuration>
+              <timestampFormat>${commons.coveralls.timestampFormat}</timestampFormat>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <!-- Profile for pre-Java 8 builds. -->
+    <profile>
+      <id>pre-jdk8</id>
+      <activation>
+        <jdk>[1.6,1.8)</jdk>
+      </activation>
+      <properties>
+        <!-- Override parent version 4.x which requires Java 8. -->
+        <commons.felix.version>3.5.1</commons.felix.version>
+        <!-- Override parent version 1.18 which requires Java 8. -->
+        <commons.animal-sniffer.version>1.17</commons.animal-sniffer.version>
+      </properties>
+      <build>
+        <!-- Alter default goal as it uses checks from Java 8 plugins. -->
+        <defaultGoal>clean verify</defaultGoal>
+      </build>
+    </profile>
+    <!-- Profile to allow the use of plugin versions that require Java 8+ -->
+    <profile>
+      <id>jdk8-plugins</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <properties>
+        <!-- MathJax script inclusion requires additional Javadoc qualifier for Java8 as of 8u121 -->
+        <allowscript.javadoc.qualifier>--allow-script-in-comments</allowscript.javadoc.qualifier>
+        <!-- Check for all javadoc errors -->
+        <doclint.javadoc.qualifier>-Xdoclint:all</doclint.javadoc.qualifier>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>${rng.checkstyle.version}</version>
+            <dependencies>
+              <dependency>
+                <groupId>com.puppycrawl.tools</groupId>
+                <artifactId>checkstyle</artifactId>
+                <version>${rng.checkstyle.dep.version}</version>
+              </dependency>
+            </dependencies>
+            <configuration>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <configLocation>${rng.parent.dir}/src/main/resources/checkstyle/checkstyle.xml</configLocation>
+              <headerLocation>${rng.parent.dir}/src/main/resources/checkstyle/license-header.txt</headerLocation>
+              <suppressionsLocation>${rng.parent.dir}/src/main/resources/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
+              <enableRulesSummary>false</enableRulesSummary>
+              <logViolationsToConsole>false</logViolationsToConsole>
+              <failOnViolation>true</failOnViolation>
+              <resourceExcludes>NOTICE.txt,LICENSE.txt,**/maven-archiver/pom.properties,**/resolver-status.properties</resourceExcludes>
+              <excludes>**/generated/**.java</excludes>
+            </configuration>
+            <executions>
+              <execution>
+                <id>validate</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <reporting>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>${rng.checkstyle.version}</version>
+            <configuration>
+              <configLocation>${rng.parent.dir}/src/main/resources/checkstyle/checkstyle.xml</configLocation>
+              <headerLocation>${rng.parent.dir}/src/main/resources/checkstyle/license-header.txt</headerLocation>
+              <suppressionsLocation>${rng.parent.dir}/src/main/resources/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
+              <enableRulesSummary>false</enableRulesSummary>
+              <includeResources>false</includeResources>
+              <excludes>**/generated/**.java</excludes>
+            </configuration>
+            <reportSets>
+              <reportSet>
+                <reports>
+                  <report>checkstyle</report>
+                </reports>
+              </reportSet>
+            </reportSets>
+          </plugin>
+        </plugins>
+      </reporting>
+    </profile>
+
+    <!--
+        Profiles for modules with special requirements.
+    -->
+    <profile>
+      <id>commons-rng-examples</id>
+      <modules>
+        <module>commons-rng-client-api</module>
+        <module>commons-rng-core</module>
+        <module>commons-rng-simple</module>
+        <module>commons-rng-sampling</module>
+        <module>commons-rng-examples</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>release</id>
+      <modules>
+        <module>commons-rng-client-api</module>
+        <module>commons-rng-core</module>
+        <module>commons-rng-simple</module>
+        <module>commons-rng-sampling</module>
+        <module>commons-rng-examples</module>
+        <module>dist-archive</module>
+      </modules>
+    </profile>
+
+  </profiles>
+
+  <developers>
+    <developer>
+      <name>Gilles Sadowski</name>
+      <id>erans</id>
+      <email>erans at apache dot org</email>
+    </developer>
+    <developer>
+      <name>Rob Tompkins</name>
+      <id>chtompki</id>
+      <email>chtompki at apache dot org</email>
+    </developer>
+    <developer>
+      <name>Alex Herbert</name>
+      <id>aherbert</id>
+      <email>aherbert at apache dot org</email>
+    </developer>
+  </developers>
+
+  <contributors>
+    <contributor>
+      <name>Artem Barger</name>
+    </contributor>
+     <contributor>
+      <name>Abhishek Singh Dhadwal</name>
+    </contributor>
+  </contributors>
+
+</project>

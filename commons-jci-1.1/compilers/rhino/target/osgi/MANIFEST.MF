@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744386923
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: Apache Commons JCI compiler implementation for Rhino
+  javascript.
+Bundle-DocURL: http://commons.apache.org/proper/commons-jci/compilers/co
+ mmons-jci-rhino/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache Commons JCI compiler-rhino
+Bundle-SymbolicName: org.apache.commons.jci-rhino
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 1.1.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.jci.compilers;version="1.1"
+Import-Package: org.apache.commons.jci.problems,org.apache.commons.jci.r
+ eaders,org.apache.commons.jci.stores,org.apache.commons.jci.utils,org.a
+ pache.commons.logging,org.mozilla.javascript,org.mozilla.javascript.opt
+ imizer
+Include-Resource: LICENSE.txt=src/main/resources/LICENSE.txt,NOTICE.txt=
+ src/main/resources/NOTICE.txt
+Private-Package: LICENSE.txt,NOTICE.txt
+Tool: Bnd-2.1.0.20130426-122213

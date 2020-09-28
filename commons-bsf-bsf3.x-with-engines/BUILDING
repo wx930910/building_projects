@@ -1,0 +1,59 @@
+Building BSF 3
+--------------
+
+BSF 3 is built with Apache Maven. Download and install Apache Maven 
+(version 2.0.4 or newer) from: http://maven.apache.org/download.html.
+
+To build BSF 3, in the top-level BSF 3 directory use the command 'mvn'.
+
+This will automatically download any dependency jars from remote Maven 
+repositories. Remote repositories may sometimes be unreliable, if you 
+get intermittent repository errors just try running 'mvn' again.
+
+Other useful Maven commands are:
+
+'mvn clean install'
+  - to remove old artifacts and rebuild from scratch
+
+'mvn assembly:assembly'
+  - to build the src and bin distros
+This requires a previous Maven 'install' or 'package'
+
+'mvn eclipse:eclipse'
+ - to setup Eclipse projects for the BSF modules
+
+'mvn deploy -Ptest-deploy -Prelease -Dgpg.skip [-DskipTests]'
+- deploy artifacts to target/deploy; useful for checking that the contents are correct.
+
+BSF requires a minimum of Java 1.4 to build
+
+If you want to run Maven using a later version of Java 
+(e.g. you want to run Maven 2.2.1 or later, which requires Java 1.5)
+some profiles have been set up in the top-level pom.xml.
+
+These profiles allow the compile and test operations to run
+under a different version of Java. The profiles are:
+
+java-1.4, java-1.5, java-1.6
+
+For example:
+
+'mvn test -Pjava-1.4' ! test using Java 1.4
+
+These profiles require some properties or environment variables to be set up.
+See the pom.xml for details on how to do this.
+
+Note, currently there is a bug in the BSF 3 projects setup which causes
+the Eclipse projects to be created badly for the test projects when
+running 'mvn eclipse:eclipse' in the BSF top-level directory. A temporary
+work around is to also run 'mvn eclipse:eclipse' within each test project
+directory, eg, testing\javascript or testing\ruby.
+
+Once dependency jars have been downloaded you can use '-o' to run 
+Maven in offline mode which is faster, eg 'mvn -o'. 
+
+Between BSF releases the BSF build may have dependencies based
+on a SNAPSHOT release. If this is the case the -U parameter 
+may sometimes be required to update to the latest SNAPSHOT 
+build of that dependency, eg. 'mvn -U'   
+

@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744385390
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: Apache Commons JCI examples.
+Bundle-DocURL: http://commons.apache.org/proper/commons-jci/commons-jci-
+ examples/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache Commons JCI examples
+Bundle-SymbolicName: org.apache.commons.jci-examples
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 1.1.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.jci.examples;version="1.1",org.apache
+ .commons.jci.examples.commandline;version="1.1",org.apache.commons.jci.
+ examples.configuration;version="1.1",org.apache.commons.jci.examples.se
+ rverpages;version="1.1"
+Import-Package: javax.servlet,javax.servlet.http,org.apache.commons.cli,
+ org.apache.commons.jci,org.apache.commons.jci.compilers,org.apache.comm
+ ons.jci.listeners,org.apache.commons.jci.monitor,org.apache.commons.jci
+ .problems,org.apache.commons.jci.readers,org.apache.commons.jci.stores,
+ org.apache.commons.jci.utils
+Include-Resource: LICENSE.txt=src/main/resources/LICENSE.txt,NOTICE.txt=
+ src/main/resources/NOTICE.txt
+Private-Package: LICENSE.txt,NOTICE.txt
+Tool: Bnd-2.1.0.20130426-122213

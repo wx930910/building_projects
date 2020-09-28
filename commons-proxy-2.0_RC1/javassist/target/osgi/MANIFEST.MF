@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744604206
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: Proxies based on classes dynamically generated using
+  Javassist
+Bundle-DocURL: http://commons.apache.org/proxy/commons-proxy2-javassist/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Commons Proxy Javassist Proxies Module
+Bundle-SymbolicName: org.apache.commons.proxy
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.proxy2.javassist;version="2.0"
+Import-Package: javassist,org.apache.commons.lang3,org.apache.commons.pr
+ oxy2,org.apache.commons.proxy2.exception,org.apache.commons.proxy2.impl
+Include-Resource: META-INF/services/org.apache.commons.proxy2.ProxyFacto
+ ry=src/main/resources/META-INF/services/org.apache.commons.proxy2.Proxy
+ Factory
+Tool: Bnd-2.1.0.20130426-122213

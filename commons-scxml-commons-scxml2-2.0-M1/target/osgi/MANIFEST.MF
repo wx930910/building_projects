@@ -1,0 +1,31 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1600744611631
+Build-Jdk: 1.8.0_261
+Built-By: Twilight
+Bundle-Description: A Java Implementation of a State Chart XML Engine
+Bundle-DocURL: http://commons.apache.org/proper/commons-scxml/
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Apache Commons SCXML
+Bundle-SymbolicName: org.apache.commons.scxml2
+Bundle-Vendor: The Apache Software Foundation
+Bundle-Version: 2.0.0.M1
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.apache.commons.scxml2;version="2.0.0.M1",org.apache.
+ commons.scxml2.env;version="2.0.0.M1",org.apache.commons.scxml2.env.gro
+ ovy;version="2.0.0.M1",org.apache.commons.scxml2.env.javascript;version
+ ="2.0.0.M1",org.apache.commons.scxml2.env.jexl;version="2.0.0.M1",org.a
+ pache.commons.scxml2.env.xpath;version="2.0.0.M1",org.apache.commons.sc
+ xml2.invoke;version="2.0.0.M1",org.apache.commons.scxml2.io;version="2.
+ 0.0.M1",org.apache.commons.scxml2.model;version="2.0.0.M1",org.apache.c
+ ommons.scxml2.semantics;version="2.0.0.M1",org.apache.commons.scxml2.sy
+ stem;version="2.0.0.M1",org.apache.commons.scxml2.test;version="2.0.0.M
+ 1"
+Import-Package: groovy.lang,javax.script,javax.xml.namespace,javax.xml.p
+ arsers,javax.xml.stream,javax.xml.stream.util,javax.xml.transform,javax
+ .xml.transform.dom,javax.xml.transform.stream,javax.xml.validation,java
+ x.xml.xpath,org.apache.commons.jexl2,org.apache.commons.logging,org.cod
+ ehaus.groovy.control,org.w3c.dom,org.xml.sax
+Include-Resource: META-INF/LICENSE.txt=LICENSE.txt,META-INF/NOTICE.txt=N
+ OTICE.txt
+Tool: Bnd-2.1.0.20130426-122213

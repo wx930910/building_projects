@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bundle-Description: A "functor" is an entity that serves the role of a
+  function but can be operated upon like an object.    The Apache Comm
+ ons Functor library defines common functor and functor-related interf
+ aces,    implementations, and utilities.
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-SymbolicName: org.apache.commons.functor
+Built-By: Twilight
+Bundle-ManifestVersion: 2
+Bnd-LastModified: 1600744383249
+Bundle-DocURL: http://commons.apache.org/sandbox/functor/
+Include-Resource: META-INF/LICENSE.txt=LICENSE.txt,META-INF/NOTICE.txt
+ =NOTICE.txt
+Bundle-Vendor: The Apache Software Foundation
+Tool: Bnd-1.43.0
+Export-Package: org.apache.commons.functor.adapter;version="1.0",org.a
+ pache.commons.functor.core.algorithm;version="1.0",org.apache.commons
+ .functor.core.comparator;version="1.0",org.apache.commons.functor;ver
+ sion="1.0",org.apache.commons.functor.core.composite;version="1.0",or
+ g.apache.commons.functor.generator;version="1.0",org.apache.commons.f
+ unctor.core.collection;version="1.0",org.apache.commons.functor.core;
+ version="1.0",org.apache.commons.functor.generator.util;version="1.0"
+Bundle-Name: Commons Functor
+Bundle-Version: 1.0.0
+Created-By: Apache Maven Bundle Plugin
+Build-Jdk: 1.8.0_261
+

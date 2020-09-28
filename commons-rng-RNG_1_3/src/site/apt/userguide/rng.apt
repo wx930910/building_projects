@@ -1,0 +1,908 @@
+~~
+~~ Licensed to the Apache Software Foundation (ASF) under one or more
+~~ contributor license agreements.  See the NOTICE file distributed with
+~~ this work for additional information regarding copyright ownership.
+~~ The ASF licenses this file to You under the Apache License, Version 2.0
+~~ (the "License"); you may not use this file except in compliance with
+~~ the License.  You may obtain a copy of the License at
+~~
+~~      http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+~~
+
+  -----------------------------
+  The Apache Commons RNG User Guide
+  -----------------------------
+
+1. Purpose
+
+  <<<Commons RNG>>> provides generators of "pseudo-randomness", i.e. the
+  generators produce deterministic sequences of bytes, currently in chunks
+  of 32 (a.k.a. <<<int>>>) or 64 bits (a.k.a. <<<long>>>), depending on the
+  implementation.
+
+  The goal was to provide an API that is simple and unencumbered with old
+  design decisions.
+
+  The design is clean and its rationale is explained in the code and Javadoc
+  (as well as in the extensive discussions on the "Apache Commons" project's
+  mailing list).
+
+  The code evolved during several months in order to accommodate the
+  requirements gathered from the design issues identified in the
+  <<<org.apache.commons.math3.random>>> package and the explicit design
+  goal of {{{./why_not_java_random.html}severing ties}} to <<<java.util.Random>>>.
+
+  The library is divided into modules:
+
+  * {{{../commons-rng-client-api/apidocs/org/apache/commons/rng/package-summary.html}Client API}} (requires Java 6)
+
+  This module provides the
+  {{{../commons-rng-client-api/apidocs/org/apache/commons/rng/RestorableUniformRandomProvider.html}interface}}
+  to be passed as argument to a procedure that needs to access to a sequence of random numbers.
+
+  * {{{../commons-rng-core/apidocs/org/apache/commons/rng/core/package-summary.html}Core}} (requires Java 6)
+
+  This module contains the implementations of several generators of pseudo-random sequences of numbers.
+  Code in this module is intended to be internal to this library and no user code should access it
+  directly.
+  With the advent of {{{http://openjdk.java.net/projects/jigsaw/}Java modularization}}, it is possible
+  that future releases of the library will enforce access through the
+  {{{../commons-rng-simple/apidocs/org/apache/commons/rng/simple/RandomSource.html}RandomSource}}
+  factory.
+
+  * {{{../commons-rng-simple/apidocs/org/apache/commons/rng/simple/package-summary.html}Simple}} (requires Java 6)
+
+  This module provides factory methods for creating instances of all the generators implemented
+  in the <<<commons-rng-core>>> module.
+
+  * {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/package-summary.html}Sampling}} (requires Java 6)
+
+  This module provides implementations that generate a sequence of numbers according to some
+  specified probability distribution, and utilities to sample from a generic collection of items.
+  It is an example of usage of the API provided in the <<<commons-rng-client-api>>> module.
+
+  * Examples
+
+  This module provides miscellaneous complete applications that illustrate usage of the library.
+  Please note that this module is not part of the library's API; no compatibility should be expected
+  in successive releases of "Commons RNG".
+
+  As of version 1.1, the following modules are provided:
+
+   ** <<<examples-jmh>>>: JMH benchmarking (requires Java 8)
+
+   This module uses the {{{http://openjdk.java.net/projects/code-tools/jmh/}JMH micro-benchmark framework}}
+   in order to assess the relative performance of the generators (see tables below).
+
+   ** <<<examples-stress>>>: Stress testing (requires Java 8)
+
+   This module implements a wrapper that calls external tools that can assess the quality of
+   the generators by submitting their output to a battery of "stress tests" (see tables below).
+
+   ** <<<examples-sampling>>>: Probability density (requires Java 8)
+
+   This module contains the code that generates the data used to produce the probability density
+   plots shown in {{{./dist_density_approx.html}this userguide}}.
+
+   ** <<<examples-jpms>>>: JPMS integration (requires Java 9)
+
+   This module implements a dummy application that shows how to use the artefacts (produced
+   from the maven modules described above) as Java modules ({{{https://en.wikipedia.org/wiki/Java_Platform_Module_System}JPMS}}).
+
+   ** <<<examples-quadrature>>>: Quadrature (requires Java 8)
+
+   This module contains an application that estimates the number 𝞹 using quasi-Montecarlo integration.
+
+   []
+
+  []
+
+
+2. Usage overview
+
+  Please refer to the generated documentation (of the appropriate module)
+  for details on the API illustrated by the following examples.
+
+
+  * Random number generator objects are instantiated through factory
+    methods defined in <<<RandomSource>>>, an <<<enum>>> that declares
+    {{{../commons-rng-simple/apidocs/org/apache/commons/rng/simple/RandomSource.html#enum.constant.detail}all the available implementations}}.
+
++--------------------------+
+import org.apache.commons.rng.UniformRandomProvider;
+import org.apache.commons.rng.simple.RandomSource;
+
+UniformRandomProvider rng = RandomSource.create(RandomSource.MT);
++--------------------------+
+
+
+  * A generator will return a randomly selected element from a range
+    of possible values of some Java (primitive) type.
+
++--------------------------+
+boolean isOn = rng.nextBoolean(); // "true" or "false".
++--------------------------+
++--------------------------+
+int n = rng.nextInt(); // Integer.MIN_VALUE <= n <= Integer.MAX_VALUE.
+int m = rng.nextInt(max); // 0 <= m < max.
++--------------------------+
++--------------------------+
+long n = rng.nextLong(); // Long.MIN_VALUE <= n <= Long.MAX_VALUE.
+long m = rng.nextLong(max); // 0 <= m < max.
++--------------------------+
++--------------------------+
+float x = rng.nextFloat(); // 0 <= x < 1.
++--------------------------+
++--------------------------+
+double x = rng.nextDouble(); // 0 <= x < 1.
++--------------------------+
+
+
+  * A generator will fill a given <<<byte>>> array with random values.
+
++--------------------------+
+byte[] a = new byte[47];
+// The elements of "a" are replaced with random values from the interval [-128, 127].
+rng.nextBytes(a);
++--------------------------+
++--------------------------+
+byte[] a = new byte[47];
+// Replace 3 elements of the array (at indices 15, 16 and 17) with random values.
+rng.nextBytes(a, 15, 3);
++--------------------------+
+
+
+  * In order to generate reproducible sequences, generators must be instantiated with a user-defined seed.
+
++--------------------------+
+UniformRandomProvider rng = RandomSource.create(RandomSource.SPLIT_MIX_64, 5776);
++--------------------------+
+
+    If no seed is passed, a random seed is generated implicitly.
+
+    Convenience methods are provided for explicitly generating random seeds of the various types.
+
++--------------------------+
+int seed = RandomSource.createInt();
++--------------------------+
++--------------------------+
+long seed = RandomSource.createLong();
++--------------------------+
++--------------------------+
+int[] seed = RandomSource.createIntArray(128); // Length of returned array is 128.
++--------------------------+
++--------------------------+
+long[] seed = RandomSource.createLongArray(128); // Length of returned array is 128.
++--------------------------+
+
+
+  * Any of the following types can be passed to the <<<create>>> method as the "seed" argument:
+
+    ** <<<int>>> or <<<Integer>>>
+
+    ** <<<long>>> or <<<Long>>>
+
+    ** <<<int[]>>>
+
+    ** <<<long[]>>>
+
+    ** <<<byte[]>>>
+
+    []
+
++--------------------------+
+UniformRandomProvider rng = RandomSource.create(RandomSource.ISAAC, 5776);
++--------------------------+
++--------------------------+
+UniformRandomProvider rng = RandomSource.create(RandomSource.ISAAC, new int[] { 6, 7, 7, 5, 6, 1, 0, 2 });
++--------------------------+
++--------------------------+
+UniformRandomProvider rng = RandomSource.create(RandomSource.ISAAC, new long[] { 0x638a3fd83bc0e851L, 0x9730fd12c75ae247L });
++--------------------------+
+
+    Note however that, upon initialization, the underlying generation algorithm
+
+    ** may not use all the information contents of the seed,
+
+    ** may use a procedure (using the given seed as input) for further filling its internal state
+       (in order to avoid a too uniform initial state).
+
+    []
+
+    In both cases, the behaviour is not standard but should not change between releases of the library
+    (bugs notwithstanding).
+
+    Each RNG implementation has a single "native" seed; when the seed argument passed
+    to the <<<create>>> method is not of the native type, it is automatically converted.
+    The conversion preserves the information contents but is otherwise not specified (i.e.
+    different releases of the library may use different conversion procedures).
+
+    Hence, if reproducibility of the generated sequences across successive releases of the
+    library is necessary, users should ensure that they use native seeds.
+
++--------------------------+
+long seed = 9246234616L;
+if (!RandomSource.TWO_CMRES.isNativeSeed(seed)) {
+    throw new IllegalArgumentException("Seed is not native");
+}
++--------------------------+
+
+    For each available implementation, the native seed type is specified in the
+    {{{../commons-rng-simple/apidocs/org/apache/commons/rng/simple/RandomSource.html#enum.constant.detail}Javadoc}}.
+
+
+  * Whenever a random source implementation is parameterized, the custom arguments
+    are passed after the seed.
+
++--------------------------+
+int seed = 96912062;
+int first = 7; // Subcycle identifier.
+int second = 4; // Subcycle identifier.
+UniformRandomProvider rng = RandomSource.create(RandomSource.TWO_CMRES_SELECT, seed, first, second);
++--------------------------+
+
+    In the above example, valid "subcycle identifiers" are in the interval [0, 13].
+
+
+  * The current state of a generator can be
+    {{{../commons-rng-client-api/apidocs/org/apache/commons/rng/RestorableUniformRandomProvider.html#saveState--}saved}}
+    and
+    {{{../commons-rng-client-api/apidocs/org/apache/commons/rng/RestorableUniformRandomProvider.html#restoreState-org.apache.commons.rng.RandomProviderState-}restored}}
+    later on.
+
++--------------------------+
+import org.apache.commons.rng.RestorableUniformRandomProvider;
+import org.apache.commons.rng.RandomProviderState;
+
+RestorableUniformRandomProvider rng = RandomSource.create(RandomSource.WELL_512_A);
+RandomProviderState state = rng.saveState();
+double x = rng.nextDouble();
+rng.restoreState(state);
+double y = rng.nextDouble(); // x == y.
++--------------------------+
+
+
+  * The <<<UniformRandomProvider>>> objects returned from the <<<create>>> methods do not
+    implement the <<<java.io.Serializable>>> interface.
+
+    However, users can easily set up a custom serialization scheme if the random source
+    is known at both ends of the communication channel.
+    This would be useful namely to save the state to persistent storage, and restore it
+    such that the sequence will continue from where it left off.
+
++--------------------------+
+import org.apache.commons.rng.RestorableUniformRandomProvider;
+import org.apache.commons.rng.simple.RandomSource;
+import org.apache.commons.rng.core.RandomProviderDefaultState;
+
+RandomSource source = RandomSource.MT_64; // Known source identifier.
+
+RestorableUniformRandomProvider rngOrig = RandomSource.create(source); // Original RNG instance.
+
+// Save and serialize state.
+RandomProviderState stateOrig = rngOrig.saveState(rngOrig);
+ByteArrayOutputStream bos = new ByteArrayOutputStream();
+ObjectOutputStream oos = new ObjectOutputStream(bos);
+oos.writeObject(((RandomProviderDefaultState) stateOrig).getState());
+
+// Deserialize state.
+ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+ObjectInputStream ois = new ObjectInputStream(bis);
+RandomProviderState stateNew = new RandomProviderDefaultState((byte[]) ois.readObject());
+
+RestorableUniformRandomProvider rngNew = RandomSource.create(source); // New RNG instance from the same "source".
+
+// Restore original state on the new instance.
+rngNew.restoreState(stateNew);
++--------------------------+
+
+  * The <<<JumpableUniformRandomProvider>>> interface allows creation of a copy of the generator and
+    advances the state of the current generator a large number of steps in a single jump. This can
+    be used to create a set of generators that will not overlap in their output sequence for the
+    length of the jump for use in parallel computations.
+
++--------------------------+
+import org.apache.commons.rng.UniformRandomProvider;
+import org.apache.commons.rng.JumpableUniformRandomProvider;
+import org.apache.commons.rng.simple.RandomSource;
+
+RandomSource source = RandomSource.XO_RO_SHI_RO_128_SS; // Known to be jumpable.
+
+JumpableUniformRandomProvider master = (JumpableUniformRandomProvider) RandomSource.create(source);
+
+// For use in parallel
+UniformRandomProvider[] rngs = new UniformRandomProvider[10];
+for (int i = 0; i < rngs.length; i++) {
+    rngs[i] = master.jump();
+}
++--------------------------+
+
+    In the above example, the source is known to implement the <<<JumpableUniformRandomProvider>>> interface.
+    Not all generators support this functionality. You can determine if a <<<RandomSource>>> is
+    jumpable without creating one using the instance methods <<<isJumpable()>>> and <<<isLongJumpable()>>>.
+
++--------------------------+
+import org.apache.commons.rng.simple.RandomSource;
+
+public void initialise(RandomSource source) {
+    if (!source.isJumpable()) {
+        throw new IllegalArgumentException("Require a jumpable random source");
+    }
+    // ...
+}
++--------------------------+
+
+  * Generation of {{{./dist_density_approx.html}random deviates}} for various
+    {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/distribution/package-summary.html}distributions}}.
+
++--------------------------+
+import org.apache.commons.rng.sampling.distribution.ContinuousSampler;
+import org.apache.commons.rng.sampling.distribution.GaussianSampler;
+import org.apache.commons.rng.sampling.distribution.MarsagliaNormalizedGaussianSampler;
+
+ContinuousSampler sampler = GaussianSampler.of(MarsagliaNormalizedGaussianSampler.of(RandomSource.create(RandomSource.MT_64)),
+                                               45.6, 2.3);
+double random = sampler.sample();
++--------------------------+
+
++--------------------------+
+import org.apache.commons.rng.sampling.distribution.DiscreteSampler;
+import org.apache.commons.rng.sampling.distribution.RejectionInversionZipfSampler;
+
+DiscreteSampler sampler = RejectionInversionZipfSampler.of(RandomSource.create(RandomSource.ISAAC),
+                                                           5, 1.2);
+int random = sampler.sample();
++--------------------------+
+
+  * The <<<SharedStateSampler>>> interface allows creation of a copy of the sampler using a new
+    generator. The samplers share only their immutable state and can be used in parallel computations.
+
++--------------------------+
+import org.apache.commons.rng.UniformRandomProvider;
+import org.apache.commons.rng.sampling.distribution.MarsagliaTsangWangDiscreteSampler;
+import org.apache.commons.rng.sampling.distribution.SharedStateDiscreteSampler;
+import org.apache.commons.rng.simple.RandomSource;
+
+RandomSource source = RandomSource.PCG_XSH_RR_32;
+
+double[] probabilities = {0.1, 0.2, 0.3, 0.4};
+SharedStateDiscreteSampler sampler1 = MarsagliaTsangWangDiscreteSampler.Enumerated.of(RandomSource.create(source),
+                                                                                      probabilities);
+
+// For use in parallel
+SharedStateDiscreteSampler sampler2 = sampler1.withUniformRandomProvider(RandomSource.create(source));
++--------------------------+
+
+    All samplers support the <<<SharedStateSampler>>> interface.
+
+  * {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/PermutationSampler.html}Permutation}},
+    {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/CombinationSampler.html}Combination}},
+    {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/CollectionSampler.html}sampling from a <<<Collection>>>}}
+    and shuffling utilities.
+
++--------------------------+
+import org.apache.commons.rng.sampling.PermutationSampler;
+import org.apache.commons.rng.sampling.CombinationSampler;
+
+// 3 elements from the (0, 1, 2, 3, 4, 5) tuplet.
+int n = 6;
+int k = 3;
+
+// If the order of the subset must be random
+PermutationSampler permutationSampler = new PermutationSampler(RandomSource.create(RandomSource.KISS),
+                                                               n, k);
+// n! / (n - k)! = 120 permutations
+int[] permutation = permutationSampler.sample();
+
+// If the elements of the subset must be random
+CombinationSampler combinationSampler = new CombinationSampler(RandomSource.create(RandomSource.KISS),
+                                                               n, k);
+// n! / (r! (n - k)!) = 20 combinations
+int[] combination = combinationSampler.sample();
++--------------------------+
+
++--------------------------+
+import java.util.HashSet;
+import org.apache.commons.rng.sampling.CollectionSampler;
+
+HashSet<String> list = new HashSet<String>();
+list.add("Apache");
+list.add("Commons");
+list.add("RNG");
+
+CollectionSampler<String> sampler = new CollectionSampler<String>(RandomSource.create(RandomSource.MWC_256),
+                                                                  list, 1);
+String word = sampler.sample();
++--------------------------+
+
++--------------------------+
+import java.util.Arrays;
+import java.util.List;
+import org.apache.commons.rng.UniformRandomProvider;
+import org.apache.commons.rng.sampling.ListSampler;
+
+List<String> list = Arrays.asList("Apache", "Commons", "RNG");
+
+UniformRandomProvider rng = RandomSource.create(RandomSource.PCG_XSH_RS_32);
+
+// Get 2 random items
+int k = 2;
+List<String> sample = ListSampler.sample(rng, list, k);
+
+// Shuffle the list
+ListSampler.shuffle(rng, list)
++--------------------------+
+
+  []
+
+
+3. Library layout
+
+  The API for client code consists of classes and interfaces defined in package
+  {{{../commons-rng-client-api/apidocs/org/apache/commons/rng/package-summary.html}org.apache.commons.rng}}.
+
+  * Interface <<<UniformRandomProvider>>> provides access to a sequence of
+    random values uniformly distributed within some range.
+
+  * Interfaces <<<RestorableUniformRandomProvider>>> and <<<RandomProviderState>>>
+    provide the "save/restore" API.
+
+  * Interfaces <<<JumpableUniformRandomProvider>>> and <<<LongJumpableUniformRandomProvider>>>
+    provide the "copy and jump" API for parallel computations.
+
+  []
+
+
+  The API for instantiating generators is defined in package
+  {{{../commons-rng-simple/apidocs/org/apache/commons/rng/simple/package-summary.html}org.apache.commons.rng.simple}}.
+
+  * Enum <<<RandomSource>>> determines which algorithm to use for generating the
+    sequence of random values.
+
+  []
+
+  The <<<org.apache.commons.rng.simple.internal>>> package contains classes
+  for supporting initialization (a.k.a. "seeding") of the generators.
+  They must not be used directly in applications, as all the necessary utilities
+  are accessible through methods defined in <<<RandomSource>>>.
+
+  * <<<ProviderBuilder>>>: contains methods for instantiating the concrete
+    RNG implementations based on the source identifier; it also takes care
+    of calling the appropriate classes for seed type conversion.
+
+  * <<<SeedFactory>>>: contains factory methods for generating random seeds.
+
+  * <<<SeedConverter>>>: interface for classes that transform between
+    supported seed types.
+
+  * Various classes that implement <<<SeedConverter>>> in order to transform
+    from caller's seed to "native" seed.
+
+  []
+
+
+  The {{{../commons-rng-core/apidocs/org/apache/commons/rng/core/package-summary.html}org.apache.commons.rng.core}}
+  package contains the implementation of the algorithms for the generation of
+  pseudo-random sequences.
+  Applications should not directly import or use classes defined in this package:
+  all generators can be instantiated through the <<<RandomSource>>> factory.
+
+  * Class <<<RandomProviderDefaultState>>> implements the <<<RandomProviderState>>>
+    interface to enable "save/restore" for all <<<RestorableUniformRandomProvider>>>
+    instances created through the <<<RandomSource>>> factory methods.
+
+  * <<<BaseProvider>>>: base class for all concrete RNG implementations;
+    it contains higher-level algorithms <<<nextInt(int n)>>> and <<<nextLong(long n)>>>
+    common to all implementations.
+
+  * <<<org.apache.commons.rng.core.util>>>
+
+    ** <<<NumberFactory>>>: contains utilities for interpreting and combining
+       the output (<<<int>>> or <<<long>>>) of the underlying source of
+       randomness into the requested output, i.e. one of the Java primitive
+       types supported by <<<UniformRandomProvider>>>.
+
+    []
+
+  * <<<org.apache.commons.rng.core.source32>>>
+
+    ** <<<RandomIntSource>>>: describes an algorithm that generates randomness in
+       32-bits chunks (a.k.a Java <<<int>>>).
+
+    ** <<<IntProvider>>>: base class for concrete classes that implement <<<RandomIntSource>>>.
+
+    ** Concrete RNG algorithms that are subclasses of <<<IntProvider>>>.
+
+    []
+
+  * <<<org.apache.commons.rng.core.source64>>>
+
+    ** <<<RandomLongSource>>>: describes an algorithm that generates randomness in
+       64-bits chunks (a.k.a Java <<<long>>>).
+
+    ** <<<LongProvider>>>: base class for concrete classes that implement <<<RandomLongSource>>>.
+
+    ** Concrete RNG algorithms that are subclasses of <<<LongProvider>>>.
+
+    []
+
+  []
+
+
+4. Performance
+
+  This section reports
+  {{{../commons-rng-examples/examples-jmh/apidocs/org/apache/commons/rng/jmh/package-summary.html}performance benchmarks}} of the RNG implementations.
+
+  All runs were performed on a platform with the following characteristics:
+
+  * CPU: Intel(R) Xeon(R) CPU E5-1680 v3 @ 3.20GHz
+
+  * Java version: 1.8.0_222 (build 1.8.0_222-8u222-b10-1ubuntu1~16.04.1-b10)
+
+  * JVM: OpenJDK 64-Bit Server VM (build 25.222-b10, mixed mode)
+
+  []
+
+  Performance was measured using the
+  {{{http://openjdk.java.net/projects/code-tools/jmh/}Java Micro-benchmark Harness (JMH)}}.
+
+  In these tables:
+
+  * The first column is the RNG identifier (see {{{../commons-rng-simple/apidocs/org/apache/commons/rng/simple/RandomSource.html}RandomSource}})
+
+  * <Lower> is <better>.
+
+  []
+
+
+* 4.1 Generating primitive values
+
+  The following table indicates the performance for generating:
+
+  * a sequence of true/false values (a.k.a. Java type <<<boolean>>>)
+
+  * a sequence of 64-bit floating point numbers (a.k.a. Java type <<<double>>>)
+
+  * a sequence of 64-bit integers (a.k.a. Java type <<<long>>>)
+
+  * a sequence of 32-bit floating point numbers (a.k.a. Java type <<<float>>>)
+
+  * a sequence of 32-bit integers (a.k.a. Java type <<<int>>>)
+
+  []
+
+  Scores are normalized to the score of <<<RandomSource.JDK>>>.
+
+  Note that the core implementations use all the bits from the random source. For example a native generator of 32-bit <<<int>>> values requires 1 generation call per 32 <<<boolean>>> values; a native generator of 64-bit <<<long>>> values requires 1 generation call per 2 <<<int>>> values. This implementation is fast for all generators but requires a high quality random source. See the {{{a5._Quality}Quality}} section.
+
+*-----------------------*---------*---------*---------*---------*---------*
+|| RNG identifier       || <<<boolean>>> || <<<double>>> || <<<long>>> || <<<float>>> || <<<int>>> |
+*-----------------------+---------:---------:---------:---------:---------:
+| JDK                   | 1.00000 | 1.00000 | 1.00000 | 1.00000 | 1.00000 |
+*-----------------------+---------:---------:---------:---------:---------:
+| WELL_512_A            | 1.22135 | 0.63756 | 0.60684 | 0.90953 | 0.79363 |
+*-----------------------+---------:---------:---------:---------:---------:
+| WELL_1024_A           | 1.22536 | 0.63199 | 0.61213 | 0.91580 | 0.71210 |
+*-----------------------+---------:---------:---------:---------:---------:
+| WELL_19937_A          | 1.27715 | 0.95424 | 0.91068 | 1.09435 | 1.11319 |
+*-----------------------+---------:---------:---------:---------:---------:
+| WELL_19937_C          | 1.27868 | 1.05484 | 0.94517 | 1.21650 | 1.12486 |
+*-----------------------+---------:---------:---------:---------:---------:
+| WELL_44497_A          | 1.28431 | 1.05087 | 0.97923 | 1.18770 | 1.14345 |
+*-----------------------+---------:---------:---------:---------:---------:
+| WELL_44497_B          | 1.29366 | 1.09522 | 1.03174 | 1.28343 | 1.21057 |
+*-----------------------+---------:---------:---------:---------:---------:
+| MT                    | 1.34824 | 0.49765 | 0.43397 | 0.68068 | 0.60217 |
+*-----------------------+---------:---------:---------:---------:---------:
+| ISAAC                 | 0.97850 | 0.54703 | 0.49186 | 0.59288 | 0.51175 |
+*-----------------------+---------:---------:---------:---------:---------:
+| SPLIT_MIX_64          | 1.14891 | 0.13411 | 0.09746 | 0.27066 | 0.20567 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XOR_SHIFT_1024_S      | 1.14255 | 0.18260 | 0.14336 | 0.33799 | 0.25541 |
+*-----------------------+---------:---------:---------:---------:---------:
+| TWO_CMRES             | 1.14709 | 0.18246 | 0.15193 | 0.33651 | 0.29568 |
+*-----------------------+---------:---------:---------:---------:---------:
+| MT_64                 | 1.16541 | 0.27305 | 0.23295 | 0.47006 | 0.37093 |
+*-----------------------+---------:---------:---------:---------:---------:
+| MWC_256               | 1.14802 | 0.25419 | 0.21431 | 0.35105 | 0.26027 |
+*-----------------------+---------:---------:---------:---------:---------:
+| KISS                  | 1.21902 | 0.41307 | 0.41465 | 0.53279 | 0.42893 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XOR_SHIFT_1024_S_PHI  | 1.14458 | 0.18517 | 0.14383 | 0.32811 | 0.25110 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_64_S     | 1.13170 | 0.18987 | 0.13436 | 0.22981 | 0.18354 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_64_SS    | 1.14729 | 0.24748 | 0.17767 | 0.28196 | 0.21002 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_128_PLUS    | 1.15035 | 0.26150 | 0.18227 | 0.31113 | 0.25720 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_128_SS      | 1.15228 | 0.32567 | 0.25913 | 0.39303 | 0.28834 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_128_PLUS | 1.16473 | 0.10786 | 0.08123 | 0.21719 | 0.17516 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_128_SS   | 1.14305 | 0.13467 | 0.10081 | 0.26687 | 0.20151 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_256_PLUS    | 1.13274 | 0.13942 | 0.10975 | 0.27536 | 0.21673 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_256_SS      | 1.13733 | 0.17227 | 0.12742 | 0.30620 | 0.23934 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_512_PLUS    | 1.14604 | 0.25573 | 0.19287 | 0.38956 | 0.34018 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_512_SS      | 1.14679 | 0.26977 | 0.22337 | 0.41464 | 0.35788 |
+*-----------------------+---------:---------:---------:---------:---------:
+| PCG_XSH_RR_32         | 0.93987 | 0.30306 | 0.26355 | 0.38115 | 0.20150 |
+*-----------------------+---------:---------:---------:---------:---------:
+| PCG_XSH_RS_32         | 0.93948 | 0.24078 | 0.18863 | 0.26774 | 0.20346 |
+*-----------------------+---------:---------:---------:---------:---------:
+| PCG_RXS_M_XS_64       | 1.14968 | 0.13220 | 0.11337 | 0.27695 | 0.21406 |
+*-----------------------+---------:---------:---------:---------:---------:
+| PCG_MCG_XSH_RR_32     | 1.09668 | 0.29003 | 0.28306 | 0.35251 | 0.18246 |
+*-----------------------+---------:---------:---------:---------:---------:
+| PCG_MCG_XSH_RS_32     | 0.94494 | 0.22776 | 0.17786 | 0.24978 | 0.17817 |
+*-----------------------+---------:---------:---------:---------:---------:
+| MSWS                  | 1.11994 | 0.17966 | 0.15163 | 0.22052 | 0.15654 |
+*-----------------------+---------:---------:---------:---------:---------:
+| SFC_32                | 1.16818 | 0.28341 | 0.19159 | 0.31184 | 0.26237 |
+*-----------------------+---------:---------:---------:---------:---------:
+| SFC_64                | 1.14182 | 0.14043 | 0.11612 | 0.30155 | 0.23111 |
+*-----------------------+---------:---------:---------:---------:---------:
+| JSF_32                | 1.15687 | 0.24286 | 0.16946 | 0.28196 | 0.23416 |
+*-----------------------+---------:---------:---------:---------:---------:
+| JSF_64                | 1.13157 | 0.13346 | 0.10875 | 0.27424 | 0.21291 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_128_PP      | 1.14795 | 0.29165 | 0.21145 | 0.35185 | 0.27282 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_128_PP   | 1.13511 | 0.12115 | 0.09061 | 0.24181 | 0.18749 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_256_PP      | 1.14166 | 0.15008 | 0.11580 | 0.29205 | 0.22667 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_SHI_RO_512_PP      | 1.14859 | 0.26896 | 0.21928 | 0.39196 | 0.34223 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_1024_PP  | 1.06705 | 0.19035 | 0.16039 | 0.32584 | 0.26999 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_1024_S   | 1.09278 | 0.18145 | 0.14870 | 0.32135 | 0.27322 |
+*-----------------------+---------:---------:---------:---------:---------:
+| XO_RO_SHI_RO_1024_SS  | 1.07087 | 0.20239 | 0.17359 | 0.34873 | 0.28468 |
+*-----------------------+---------:---------:---------:---------:---------:
+
+  Notes:
+
+  The <<<RandomSource.JDK>>> generator uses thread-safe (synchronized) <<<int>>> generation which has a performance overhead (see the <<<int>>> generation results). For the <<<boolean>>> generation the synchronization occurs 1 in 32 calls and the resulting performance is good. However the output will be low quality and this generator should not be used. See the {{{a5._Quality}Quality}} section for details.
+
+  The speed of <<<boolean>>> generation is related to the speed that the generator can be loaded to memory and used to generate a new value. This favours those with a small state such as the linear congruential based generators (<<<JDK>>>, <<<PCG>>>) and those that batch compute values into an array (<<<ISAAC>>>). A RNG to compute boolean samples should be chosen based on the {{{a5._Quality}quality}} of the output.
+
+
+* 4.2 Generating Gaussian samples
+
+  The following table compares the
+  {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/distribution/BoxMullerNormalizedGaussianSampler.html}BoxMullerNormalizedGaussianSampler}},
+  {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/distribution/MarsagliaNormalizedGaussianSampler.html}MarsagliaNormalizedGaussianSampler}},
+  and {{{../commons-rng-sampling/apidocs/org/apache/commons/rng/sampling/distribution/ZigguratNormalizedGaussianSampler.html}ZigguratNormalizedGaussianSampler}}.
+
+  Each score is normalized to the score of {{{https://docs.oracle.com/javase/8/docs/api/java/util/Random.html#nextGaussian--}nextGaussian()}} method of <<<java.util.Random>>> which internally uses the Box-Muller algorithm.
+
+*-----------------------*---------*----------*---------*
+|| RNG identifier       || <<<BoxMullerNormalizedGaussianSampler>>> || <<<MarsagliaNormalizedGaussianSampler>>> || <<<ZigguratNormalizedGaussianSampler>>> |
+*-----------------------+---------:----------:---------:
+| JDK                   | 0.77877 | 0.73264 | 0.36637 |
+*-----------------------+---------:---------:---------:
+| WELL_512_A            | 0.74445 | 0.56462 | 0.28636 |
+*-----------------------+---------:---------:---------:
+| WELL_1024_A           | 0.77007 | 0.59756 | 0.29257 |
+*-----------------------+---------:---------:---------:
+| WELL_19937_A          | 0.82748 | 0.69269 | 0.33740 |
+*-----------------------+---------:---------:---------:
+| WELL_19937_C          | 0.84789 | 0.73891 | 0.36717 |
+*-----------------------+---------:---------:---------:
+| WELL_44497_A          | 0.87112 | 0.70183 | 0.36227 |
+*-----------------------+---------:---------:---------:
+| WELL_44497_B          | 0.87857 | 0.72934 | 0.38255 |
+*-----------------------+---------:---------:---------:
+| MT                    | 0.67691 | 0.47800 | 0.26109 |
+*-----------------------+---------:---------:---------:
+| ISAAC                 | 0.68059 | 0.46536 | 0.27033 |
+*-----------------------+---------:---------:---------:
+| SPLIT_MIX_64          | 0.58001 | 0.32004 | 0.17078 |
+*-----------------------+---------:---------:---------:
+| XOR_SHIFT_1024_S      | 0.57795 | 0.33331 | 0.17935 |
+*-----------------------+---------:---------:---------:
+| TWO_CMRES             | 0.62947 | 0.35806 | 0.17582 |
+*-----------------------+---------:---------:---------:
+| MT_64                 | 0.62248 | 0.38571 | 0.21970 |
+*-----------------------+---------:---------:---------:
+| MWC_256               | 0.59030 | 0.36393 | 0.18993 |
+*-----------------------+---------:---------:---------:
+| KISS                  | 0.65810 | 0.45252 | 0.23848 |
+*-----------------------+---------:---------:---------:
+| XOR_SHIFT_1024_S_PHI  | 0.57803 | 0.33260 | 0.17968 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_64_S     | 0.58363 | 0.34124 | 0.17522 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_64_SS    | 0.59167 | 0.35355 | 0.19744 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_128_PLUS    | 0.59485 | 0.34544 | 0.19495 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_128_SS      | 0.60230 | 0.38200 | 0.20840 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_128_PLUS | 0.56040 | 0.30974 | 0.15410 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_128_SS   | 0.55593 | 0.32892 | 0.16156 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_256_PLUS    | 0.56583 | 0.31493 | 0.15552 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_256_SS      | 0.57781 | 0.32193 | 0.17085 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_512_PLUS    | 0.58922 | 0.36533 | 0.19035 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_512_SS      | 0.58811 | 0.33545 | 0.19263 |
+*-----------------------+---------:---------:---------:
+| PCG_XSH_RR_32         | 0.60552 | 0.41318 | 0.21311 |
+*-----------------------+---------:---------:---------:
+| PCG_XSH_RS_32         | 0.59166 | 0.35733 | 0.18407 |
+*-----------------------+---------:---------:---------:
+| PCG_RXS_M_XS_64       | 0.57445 | 0.32554 | 0.16350 |
+*-----------------------+---------:---------:---------:
+| PCG_MCG_XSH_RR_32     | 0.60252 | 0.41204 | 0.21687 |
+*-----------------------+---------:---------:---------:
+| PCG_MCG_XSH_RS_32     | 0.58558 | 0.35372 | 0.18327 |
+*-----------------------+---------:---------:---------:
+| MSWS                  | 0.58084 | 0.34002 | 0.17617 |
+*-----------------------+---------:---------:---------:
+| SFC_32                | 0.59413 | 0.35255 | 0.18698 |
+*-----------------------+---------:---------:---------:
+| SFC_64                | 0.55220 | 0.32147 | 0.16161 |
+*-----------------------+---------:---------:---------:
+| JSF_32                | 0.59929 | 0.34080 | 0.18532 |
+*-----------------------+---------:---------:---------:
+| JSF_64                | 0.56529 | 0.31836 | 0.15325 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_128_PP      | 0.59851 | 0.35367 | 0.19666 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_128_PP   | 0.56427 | 0.31718 | 0.15767 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_256_PP      | 0.57554 | 0.31834 | 0.16573 |
+*-----------------------+---------:---------:---------:
+| XO_SHI_RO_512_PP      | 0.59131 | 0.36728 | 0.19869 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_1024_PP  | 0.58844 | 0.33181 | 0.18223 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_1024_S   | 0.57474 | 0.32710 | 0.17992 |
+*-----------------------+---------:---------:---------:
+| XO_RO_SHI_RO_1024_SS  | 0.58185 | 0.33993 | 0.18551 |
+*-----------------------+---------:---------:---------:
+
+  Notes:
+
+  The reference <<<java.util.Random>>> nextGaussian() method uses synchronized method calls per sample. The <<<RandomSource.JDK>>> RNG will use synchronized method calls when generating numbers for the <<<BoxMullerNormalizedGaussianSampler>>> but the calls to obtain the samples are not synchronized, hence the observed difference. All the other RNGs are not synchronized.
+
+
+5. Quality
+
+  This section reports results of
+  {{{../commons-rng-examples/apidocs/org/apache/commons/rng/examples/stress/package-summary.html}performing "stress tests"}}
+  that aim at detecting failures of an implementation to produce sequences of numbers
+  that follow a uniform distribution.
+
+  Three different test suites were used:
+
+  * {{{http://www.phy.duke.edu/~rgb/General/dieharder.php}Dieharder v3.31.1}}
+
+  * {{{http://pracrand.sourceforge.net/}PractRand v0.94}}
+
+  * {{{http://simul.iro.umontreal.ca/testu01/tu01.html}TestU01 v1.2.3}}
+
+  []
+
+  Note that the <Dieharder> and <TestU01> test suites accept 32-bit integer values. Any generator of 64-bit <<<long>>> values has the upper and lower 32-bits passed to the test suite. <PractRand> supports 64-bit generators.
+
+  The first column is the RNG identifier (see {{{../commons-rng-simple/apidocs/org/apache/commons/rng/simple/RandomSource.html}RandomSource}}). The remaining columns contain the results of separate runs of the test suite using different random seeds. Click on one of the entries of the comma-separated list in order to see the text report of the corresponding run.
+
+  The <Dieharder> and <TestU01> test suites contain many tests each requiring an approximately fixed size of random output; in the case of multiple tests different output is used for each test. <Dieharder> was run using the full set of tests. <TestU01> was run using BigCrush. The number in the table indicates the number of failed tests, i.e. tests reported as below the accepted threshold for considering the sequence as uniformly random; hence <lower> is <better>. Note: For <Dieharder> the flawed "Diehard Sums Test" is {{{http://www.phy.duke.edu/~rgb/General/dieharder.php}ignored}} from the failure counts.
+
+  <PractRand> tests a length of the RNG output with all the selected tests; this is repeated with doubling lengths until a failure is detected or the maximum size is reached. <PractRand> was run using the core tests and smart folding. This is the default mode and comprises tests with little overlap in their characteristics and additional targeting testing of the lower bits of the output sequence. The limit for these results was 4 terabytes (4 TiB). A number in the table indicates the size in bytes of output where a failure occurred expressed as an exponent of 2; hence <higher> is <better>. A dash (<->) indicates no failure and is <best>.
+
+  Spurious failures are a failure in a single run of the test suite. These are to be expected as the tests use probability thresholds to determine if the output is non-random. Systematic failures where the RNG fails the same test in every run indicate a problem with the RNG output. The count of systematic failures for <Dieharder> and <TestU01> are shown in parentheses. The maximum output at which a failure always occurs for <PractRand> is shown in parentheses.
+
+  Any RNG with <no systematic failures> is highlighted in <<bold>>. Note that some RNGs fail <PractRand> on tests which target the lower bits. These are not suitable as all purpose generators but have utility in floating-point number generation where the lower bits are not used.
+
+*-----------------*------------*---------------------*-------------*
+|| RNG identifier || Dieharder || TestU01 (BigCrush) || PractRand ||
+*-----------------+------------+---------------------+-------------+
+| JDK | {{{../txt/userguide/stress/dh_1_1}4}}, {{{../txt/userguide/stress/dh_1_2}4}}, {{{../txt/userguide/stress/dh_1_3}4}}, {{{../txt/userguide/stress/dh_1_4}4}}, {{{../txt/userguide/stress/dh_1_5}4}} (4) | {{{../txt/userguide/stress/tu_1_1}50}}, {{{../txt/userguide/stress/tu_1_2}51}}, {{{../txt/userguide/stress/tu_1_3}52}}, {{{../txt/userguide/stress/tu_1_4}49}}, {{{../txt/userguide/stress/tu_1_5}51}} (48) | {{{../txt/userguide/stress/pr_1_1}20}}, {{{../txt/userguide/stress/pr_1_2}20}}, {{{../txt/userguide/stress/pr_1_3}20}} (1 MiB) |
+*-----------------+------------+---------------------+-------------+
+| WELL_512_A | {{{../txt/userguide/stress/dh_2_1}0}}, {{{../txt/userguide/stress/dh_2_2}0}}, {{{../txt/userguide/stress/dh_2_3}0}}, {{{../txt/userguide/stress/dh_2_4}0}}, {{{../txt/userguide/stress/dh_2_5}0}} | {{{../txt/userguide/stress/tu_2_1}6}}, {{{../txt/userguide/stress/tu_2_2}7}}, {{{../txt/userguide/stress/tu_2_3}8}}, {{{../txt/userguide/stress/tu_2_4}6}}, {{{../txt/userguide/stress/tu_2_5}6}} (6) | {{{../txt/userguide/stress/pr_2_1}24}}, {{{../txt/userguide/stress/pr_2_2}24}}, {{{../txt/userguide/stress/pr_2_3}24}} (16 MiB) |
+*-----------------+------------+---------------------+-------------+
+| WELL_1024_A | {{{../txt/userguide/stress/dh_3_1}0}}, {{{../txt/userguide/stress/dh_3_2}0}}, {{{../txt/userguide/stress/dh_3_3}0}}, {{{../txt/userguide/stress/dh_3_4}0}}, {{{../txt/userguide/stress/dh_3_5}0}} | {{{../txt/userguide/stress/tu_3_1}5}}, {{{../txt/userguide/stress/tu_3_2}4}}, {{{../txt/userguide/stress/tu_3_3}5}}, {{{../txt/userguide/stress/tu_3_4}5}}, {{{../txt/userguide/stress/tu_3_5}4}} (4) | {{{../txt/userguide/stress/pr_3_1}27}}, {{{../txt/userguide/stress/pr_3_2}27}}, {{{../txt/userguide/stress/pr_3_3}27}} (128 MiB) |
+*-----------------+------------+---------------------+-------------+
+| WELL_19937_A | {{{../txt/userguide/stress/dh_4_1}0}}, {{{../txt/userguide/stress/dh_4_2}1}}, {{{../txt/userguide/stress/dh_4_3}0}}, {{{../txt/userguide/stress/dh_4_4}0}}, {{{../txt/userguide/stress/dh_4_5}0}} | {{{../txt/userguide/stress/tu_4_1}2}}, {{{../txt/userguide/stress/tu_4_2}2}}, {{{../txt/userguide/stress/tu_4_3}3}}, {{{../txt/userguide/stress/tu_4_4}3}}, {{{../txt/userguide/stress/tu_4_5}3}} (2) | {{{../txt/userguide/stress/pr_4_1}39}}, {{{../txt/userguide/stress/pr_4_2}39}}, {{{../txt/userguide/stress/pr_4_3}39}} (512 GiB) |
+*-----------------+------------+---------------------+-------------+
+| WELL_19937_C | {{{../txt/userguide/stress/dh_5_1}0}}, {{{../txt/userguide/stress/dh_5_2}0}}, {{{../txt/userguide/stress/dh_5_3}0}}, {{{../txt/userguide/stress/dh_5_4}0}}, {{{../txt/userguide/stress/dh_5_5}0}} | {{{../txt/userguide/stress/tu_5_1}4}}, {{{../txt/userguide/stress/tu_5_2}2}}, {{{../txt/userguide/stress/tu_5_3}2}}, {{{../txt/userguide/stress/tu_5_4}2}}, {{{../txt/userguide/stress/tu_5_5}2}} (2) | {{{../txt/userguide/stress/pr_5_1}39}}, {{{../txt/userguide/stress/pr_5_2}39}}, {{{../txt/userguide/stress/pr_5_3}39}} (512 GiB) |
+*-----------------+------------+---------------------+-------------+
+| WELL_44497_A | {{{../txt/userguide/stress/dh_6_1}0}}, {{{../txt/userguide/stress/dh_6_2}0}}, {{{../txt/userguide/stress/dh_6_3}0}}, {{{../txt/userguide/stress/dh_6_4}0}}, {{{../txt/userguide/stress/dh_6_5}0}} | {{{../txt/userguide/stress/tu_6_1}3}}, {{{../txt/userguide/stress/tu_6_2}2}}, {{{../txt/userguide/stress/tu_6_3}2}}, {{{../txt/userguide/stress/tu_6_4}2}}, {{{../txt/userguide/stress/tu_6_5}3}} (2) | {{{../txt/userguide/stress/pr_6_1}42}}, {{{../txt/userguide/stress/pr_6_2}42}}, {{{../txt/userguide/stress/pr_6_3}42}} (4 TiB) |
+*-----------------+------------+---------------------+-------------+
+| WELL_44497_B | {{{../txt/userguide/stress/dh_7_1}0}}, {{{../txt/userguide/stress/dh_7_2}0}}, {{{../txt/userguide/stress/dh_7_3}0}}, {{{../txt/userguide/stress/dh_7_4}0}}, {{{../txt/userguide/stress/dh_7_5}0}} | {{{../txt/userguide/stress/tu_7_1}2}}, {{{../txt/userguide/stress/tu_7_2}2}}, {{{../txt/userguide/stress/tu_7_3}2}}, {{{../txt/userguide/stress/tu_7_4}2}}, {{{../txt/userguide/stress/tu_7_5}2}} (2) | {{{../txt/userguide/stress/pr_7_1}42}}, {{{../txt/userguide/stress/pr_7_2}42}}, {{{../txt/userguide/stress/pr_7_3}42}} (4 TiB) |
+*-----------------+------------+---------------------+-------------+
+| MT | {{{../txt/userguide/stress/dh_8_1}0}}, {{{../txt/userguide/stress/dh_8_2}0}}, {{{../txt/userguide/stress/dh_8_3}0}}, {{{../txt/userguide/stress/dh_8_4}0}}, {{{../txt/userguide/stress/dh_8_5}0}} | {{{../txt/userguide/stress/tu_8_1}2}}, {{{../txt/userguide/stress/tu_8_2}3}}, {{{../txt/userguide/stress/tu_8_3}2}}, {{{../txt/userguide/stress/tu_8_4}2}}, {{{../txt/userguide/stress/tu_8_5}3}} (2) | {{{../txt/userguide/stress/pr_8_1}38}}, {{{../txt/userguide/stress/pr_8_2}38}}, {{{../txt/userguide/stress/pr_8_3}38}} (256 GiB) |
+*-----------------+------------+---------------------+-------------+
+| <<ISAAC>> | {{{../txt/userguide/stress/dh_9_1}0}}, {{{../txt/userguide/stress/dh_9_2}0}}, {{{../txt/userguide/stress/dh_9_3}0}}, {{{../txt/userguide/stress/dh_9_4}0}}, {{{../txt/userguide/stress/dh_9_5}0}} | {{{../txt/userguide/stress/tu_9_1}1}}, {{{../txt/userguide/stress/tu_9_2}1}}, {{{../txt/userguide/stress/tu_9_3}0}}, {{{../txt/userguide/stress/tu_9_4}0}}, {{{../txt/userguide/stress/tu_9_5}1}} | {{{../txt/userguide/stress/pr_9_1}-}}, {{{../txt/userguide/stress/pr_9_2}-}}, {{{../txt/userguide/stress/pr_9_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<SPLIT_MIX_64>> | {{{../txt/userguide/stress/dh_10_1}0}}, {{{../txt/userguide/stress/dh_10_2}0}}, {{{../txt/userguide/stress/dh_10_3}0}}, {{{../txt/userguide/stress/dh_10_4}0}}, {{{../txt/userguide/stress/dh_10_5}0}} | {{{../txt/userguide/stress/tu_10_1}0}}, {{{../txt/userguide/stress/tu_10_2}0}}, {{{../txt/userguide/stress/tu_10_3}0}}, {{{../txt/userguide/stress/tu_10_4}1}}, {{{../txt/userguide/stress/tu_10_5}0}} | {{{../txt/userguide/stress/pr_10_1}-}}, {{{../txt/userguide/stress/pr_10_2}-}}, {{{../txt/userguide/stress/pr_10_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| XOR_SHIFT_1024_S | {{{../txt/userguide/stress/dh_11_1}0}}, {{{../txt/userguide/stress/dh_11_2}0}}, {{{../txt/userguide/stress/dh_11_3}0}}, {{{../txt/userguide/stress/dh_11_4}0}}, {{{../txt/userguide/stress/dh_11_5}0}} | {{{../txt/userguide/stress/tu_11_1}1}}, {{{../txt/userguide/stress/tu_11_2}0}}, {{{../txt/userguide/stress/tu_11_3}0}}, {{{../txt/userguide/stress/tu_11_4}0}}, {{{../txt/userguide/stress/tu_11_5}2}} | {{{../txt/userguide/stress/pr_11_1}31}}, {{{../txt/userguide/stress/pr_11_2}31}}, {{{../txt/userguide/stress/pr_11_3}31}} (2 GiB) |
+*-----------------+------------+---------------------+-------------+
+| TWO_CMRES | {{{../txt/userguide/stress/dh_12_1}2}}, {{{../txt/userguide/stress/dh_12_2}2}}, {{{../txt/userguide/stress/dh_12_3}2}}, {{{../txt/userguide/stress/dh_12_4}2}}, {{{../txt/userguide/stress/dh_12_5}2}} (2) | {{{../txt/userguide/stress/tu_12_1}0}}, {{{../txt/userguide/stress/tu_12_2}1}}, {{{../txt/userguide/stress/tu_12_3}0}}, {{{../txt/userguide/stress/tu_12_4}0}}, {{{../txt/userguide/stress/tu_12_5}0}} | {{{../txt/userguide/stress/pr_12_1}32}}, {{{../txt/userguide/stress/pr_12_2}32}}, {{{../txt/userguide/stress/pr_12_3}32}} (4 GiB) |
+*-----------------+------------+---------------------+-------------+
+| MT_64 | {{{../txt/userguide/stress/dh_14_1}0}}, {{{../txt/userguide/stress/dh_14_2}0}}, {{{../txt/userguide/stress/dh_14_3}0}}, {{{../txt/userguide/stress/dh_14_4}0}}, {{{../txt/userguide/stress/dh_14_5}0}} | {{{../txt/userguide/stress/tu_14_1}2}}, {{{../txt/userguide/stress/tu_14_2}2}}, {{{../txt/userguide/stress/tu_14_3}2}}, {{{../txt/userguide/stress/tu_14_4}2}}, {{{../txt/userguide/stress/tu_14_5}2}} (2) | {{{../txt/userguide/stress/pr_14_1}39}}, {{{../txt/userguide/stress/pr_14_2}39}}, {{{../txt/userguide/stress/pr_14_3}39}} (512 GiB) |
+*-----------------+------------+---------------------+-------------+
+| <<MWC_256>> | {{{../txt/userguide/stress/dh_15_1}0}}, {{{../txt/userguide/stress/dh_15_2}0}}, {{{../txt/userguide/stress/dh_15_3}0}}, {{{../txt/userguide/stress/dh_15_4}0}}, {{{../txt/userguide/stress/dh_15_5}0}} | {{{../txt/userguide/stress/tu_15_1}0}}, {{{../txt/userguide/stress/tu_15_2}1}}, {{{../txt/userguide/stress/tu_15_3}1}}, {{{../txt/userguide/stress/tu_15_4}1}}, {{{../txt/userguide/stress/tu_15_5}0}} | {{{../txt/userguide/stress/pr_15_1}-}}, {{{../txt/userguide/stress/pr_15_2}-}}, {{{../txt/userguide/stress/pr_15_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<KISS>> | {{{../txt/userguide/stress/dh_16_1}0}}, {{{../txt/userguide/stress/dh_16_2}0}}, {{{../txt/userguide/stress/dh_16_3}0}}, {{{../txt/userguide/stress/dh_16_4}0}}, {{{../txt/userguide/stress/dh_16_5}0}} | {{{../txt/userguide/stress/tu_16_1}1}}, {{{../txt/userguide/stress/tu_16_2}1}}, {{{../txt/userguide/stress/tu_16_3}0}}, {{{../txt/userguide/stress/tu_16_4}0}}, {{{../txt/userguide/stress/tu_16_5}0}} | {{{../txt/userguide/stress/pr_16_1}-}}, {{{../txt/userguide/stress/pr_16_2}-}}, {{{../txt/userguide/stress/pr_16_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| XOR_SHIFT_1024_S_PHI | {{{../txt/userguide/stress/dh_17_1}0}}, {{{../txt/userguide/stress/dh_17_2}0}}, {{{../txt/userguide/stress/dh_17_3}0}}, {{{../txt/userguide/stress/dh_17_4}0}}, {{{../txt/userguide/stress/dh_17_5}0}} | {{{../txt/userguide/stress/tu_17_1}0}}, {{{../txt/userguide/stress/tu_17_2}2}}, {{{../txt/userguide/stress/tu_17_3}0}}, {{{../txt/userguide/stress/tu_17_4}0}}, {{{../txt/userguide/stress/tu_17_5}1}} | {{{../txt/userguide/stress/pr_17_1}33}}, {{{../txt/userguide/stress/pr_17_2}33}}, {{{../txt/userguide/stress/pr_17_3}33}} (8 GiB) |
+*-----------------+------------+---------------------+-------------+
+| XO_RO_SHI_RO_64_S | {{{../txt/userguide/stress/dh_18_1}0}}, {{{../txt/userguide/stress/dh_18_2}0}}, {{{../txt/userguide/stress/dh_18_3}0}}, {{{../txt/userguide/stress/dh_18_4}0}}, {{{../txt/userguide/stress/dh_18_5}0}} | {{{../txt/userguide/stress/tu_18_1}1}}, {{{../txt/userguide/stress/tu_18_2}2}}, {{{../txt/userguide/stress/tu_18_3}3}}, {{{../txt/userguide/stress/tu_18_4}1}}, {{{../txt/userguide/stress/tu_18_5}1}} (1) | {{{../txt/userguide/stress/pr_18_1}21}}, {{{../txt/userguide/stress/pr_18_2}21}}, {{{../txt/userguide/stress/pr_18_3}21}} (2 MiB) |
+*-----------------+------------+---------------------+-------------+
+| <<XO_RO_SHI_RO_64_SS>> | {{{../txt/userguide/stress/dh_19_1}0}}, {{{../txt/userguide/stress/dh_19_2}0}}, {{{../txt/userguide/stress/dh_19_3}0}}, {{{../txt/userguide/stress/dh_19_4}0}}, {{{../txt/userguide/stress/dh_19_5}0}} | {{{../txt/userguide/stress/tu_19_1}0}}, {{{../txt/userguide/stress/tu_19_2}1}}, {{{../txt/userguide/stress/tu_19_3}0}}, {{{../txt/userguide/stress/tu_19_4}0}}, {{{../txt/userguide/stress/tu_19_5}0}} | {{{../txt/userguide/stress/pr_19_1}-}}, {{{../txt/userguide/stress/pr_19_2}-}}, {{{../txt/userguide/stress/pr_19_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| XO_SHI_RO_128_PLUS | {{{../txt/userguide/stress/dh_20_1}0}}, {{{../txt/userguide/stress/dh_20_2}0}}, {{{../txt/userguide/stress/dh_20_3}0}}, {{{../txt/userguide/stress/dh_20_4}0}}, {{{../txt/userguide/stress/dh_20_5}0}} | {{{../txt/userguide/stress/tu_20_1}0}}, {{{../txt/userguide/stress/tu_20_2}0}}, {{{../txt/userguide/stress/tu_20_3}1}}, {{{../txt/userguide/stress/tu_20_4}0}}, {{{../txt/userguide/stress/tu_20_5}0}} | {{{../txt/userguide/stress/pr_20_1}24}}, {{{../txt/userguide/stress/pr_20_2}24}}, {{{../txt/userguide/stress/pr_20_3}24}} (16 MiB) |
+*-----------------+------------+---------------------+-------------+
+| <<XO_SHI_RO_128_SS>> | {{{../txt/userguide/stress/dh_21_1}0}}, {{{../txt/userguide/stress/dh_21_2}0}}, {{{../txt/userguide/stress/dh_21_3}0}}, {{{../txt/userguide/stress/dh_21_4}0}}, {{{../txt/userguide/stress/dh_21_5}0}} | {{{../txt/userguide/stress/tu_21_1}1}}, {{{../txt/userguide/stress/tu_21_2}0}}, {{{../txt/userguide/stress/tu_21_3}1}}, {{{../txt/userguide/stress/tu_21_4}0}}, {{{../txt/userguide/stress/tu_21_5}0}} | {{{../txt/userguide/stress/pr_21_1}-}}, {{{../txt/userguide/stress/pr_21_2}-}}, {{{../txt/userguide/stress/pr_21_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| XO_RO_SHI_RO_128_PLUS | {{{../txt/userguide/stress/dh_22_1}0}}, {{{../txt/userguide/stress/dh_22_2}0}}, {{{../txt/userguide/stress/dh_22_3}0}}, {{{../txt/userguide/stress/dh_22_4}0}}, {{{../txt/userguide/stress/dh_22_5}0}} | {{{../txt/userguide/stress/tu_22_1}1}}, {{{../txt/userguide/stress/tu_22_2}0}}, {{{../txt/userguide/stress/tu_22_3}0}}, {{{../txt/userguide/stress/tu_22_4}0}}, {{{../txt/userguide/stress/tu_22_5}0}} | {{{../txt/userguide/stress/pr_22_1}25}}, {{{../txt/userguide/stress/pr_22_2}25}}, {{{../txt/userguide/stress/pr_22_3}25}} (32 MiB) |
+*-----------------+------------+---------------------+-------------+
+| <<XO_RO_SHI_RO_128_SS>> | {{{../txt/userguide/stress/dh_23_1}0}}, {{{../txt/userguide/stress/dh_23_2}0}}, {{{../txt/userguide/stress/dh_23_3}0}}, {{{../txt/userguide/stress/dh_23_4}0}}, {{{../txt/userguide/stress/dh_23_5}0}} | {{{../txt/userguide/stress/tu_23_1}1}}, {{{../txt/userguide/stress/tu_23_2}1}}, {{{../txt/userguide/stress/tu_23_3}1}}, {{{../txt/userguide/stress/tu_23_4}0}}, {{{../txt/userguide/stress/tu_23_5}0}} | {{{../txt/userguide/stress/pr_23_1}-}}, {{{../txt/userguide/stress/pr_23_2}-}}, {{{../txt/userguide/stress/pr_23_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| XO_SHI_RO_256_PLUS | {{{../txt/userguide/stress/dh_24_1}0}}, {{{../txt/userguide/stress/dh_24_2}0}}, {{{../txt/userguide/stress/dh_24_3}0}}, {{{../txt/userguide/stress/dh_24_4}0}}, {{{../txt/userguide/stress/dh_24_5}0}} | {{{../txt/userguide/stress/tu_24_1}1}}, {{{../txt/userguide/stress/tu_24_2}0}}, {{{../txt/userguide/stress/tu_24_3}0}}, {{{../txt/userguide/stress/tu_24_4}0}}, {{{../txt/userguide/stress/tu_24_5}0}} | {{{../txt/userguide/stress/pr_24_1}27}}, {{{../txt/userguide/stress/pr_24_2}27}}, {{{../txt/userguide/stress/pr_24_3}27}} (128 MiB) |
+*-----------------+------------+---------------------+-------------+
+| <<XO_SHI_RO_256_SS>> | {{{../txt/userguide/stress/dh_25_1}0}}, {{{../txt/userguide/stress/dh_25_2}0}}, {{{../txt/userguide/stress/dh_25_3}0}}, {{{../txt/userguide/stress/dh_25_4}0}}, {{{../txt/userguide/stress/dh_25_5}0}} | {{{../txt/userguide/stress/tu_25_1}0}}, {{{../txt/userguide/stress/tu_25_2}0}}, {{{../txt/userguide/stress/tu_25_3}0}}, {{{../txt/userguide/stress/tu_25_4}0}}, {{{../txt/userguide/stress/tu_25_5}1}} | {{{../txt/userguide/stress/pr_25_1}-}}, {{{../txt/userguide/stress/pr_25_2}-}}, {{{../txt/userguide/stress/pr_25_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| XO_SHI_RO_512_PLUS | {{{../txt/userguide/stress/dh_26_1}0}}, {{{../txt/userguide/stress/dh_26_2}0}}, {{{../txt/userguide/stress/dh_26_3}0}}, {{{../txt/userguide/stress/dh_26_4}0}}, {{{../txt/userguide/stress/dh_26_5}0}} | {{{../txt/userguide/stress/tu_26_1}0}}, {{{../txt/userguide/stress/tu_26_2}2}}, {{{../txt/userguide/stress/tu_26_3}0}}, {{{../txt/userguide/stress/tu_26_4}0}}, {{{../txt/userguide/stress/tu_26_5}0}} | {{{../txt/userguide/stress/pr_26_1}30}}, {{{../txt/userguide/stress/pr_26_2}30}}, {{{../txt/userguide/stress/pr_26_3}30}} (1 GiB) |
+*-----------------+------------+---------------------+-------------+
+| <<XO_SHI_RO_512_SS>> | {{{../txt/userguide/stress/dh_27_1}0}}, {{{../txt/userguide/stress/dh_27_2}0}}, {{{../txt/userguide/stress/dh_27_3}0}}, {{{../txt/userguide/stress/dh_27_4}0}}, {{{../txt/userguide/stress/dh_27_5}0}} | {{{../txt/userguide/stress/tu_27_1}0}}, {{{../txt/userguide/stress/tu_27_2}0}}, {{{../txt/userguide/stress/tu_27_3}0}}, {{{../txt/userguide/stress/tu_27_4}0}}, {{{../txt/userguide/stress/tu_27_5}0}} | {{{../txt/userguide/stress/pr_27_1}-}}, {{{../txt/userguide/stress/pr_27_2}-}}, {{{../txt/userguide/stress/pr_27_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<PCG_XSH_RR_32>> | {{{../txt/userguide/stress/dh_28_1}0}}, {{{../txt/userguide/stress/dh_28_2}0}}, {{{../txt/userguide/stress/dh_28_3}0}}, {{{../txt/userguide/stress/dh_28_4}0}}, {{{../txt/userguide/stress/dh_28_5}0}} | {{{../txt/userguide/stress/tu_28_1}0}}, {{{../txt/userguide/stress/tu_28_2}0}}, {{{../txt/userguide/stress/tu_28_3}0}}, {{{../txt/userguide/stress/tu_28_4}0}}, {{{../txt/userguide/stress/tu_28_5}0}} | {{{../txt/userguide/stress/pr_28_1}-}}, {{{../txt/userguide/stress/pr_28_2}-}}, {{{../txt/userguide/stress/pr_28_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<PCG_XSH_RS_32>> | {{{../txt/userguide/stress/dh_29_1}0}}, {{{../txt/userguide/stress/dh_29_2}0}}, {{{../txt/userguide/stress/dh_29_3}0}}, {{{../txt/userguide/stress/dh_29_4}0}}, {{{../txt/userguide/stress/dh_29_5}0}} | {{{../txt/userguide/stress/tu_29_1}0}}, {{{../txt/userguide/stress/tu_29_2}1}}, {{{../txt/userguide/stress/tu_29_3}2}}, {{{../txt/userguide/stress/tu_29_4}1}}, {{{../txt/userguide/stress/tu_29_5}0}} | {{{../txt/userguide/stress/pr_29_1}41}}, {{{../txt/userguide/stress/pr_29_2}-}}, {{{../txt/userguide/stress/pr_29_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<PCG_RXS_M_XS_64>> | {{{../txt/userguide/stress/dh_30_1}0}}, {{{../txt/userguide/stress/dh_30_2}0}}, {{{../txt/userguide/stress/dh_30_3}0}}, {{{../txt/userguide/stress/dh_30_4}0}}, {{{../txt/userguide/stress/dh_30_5}0}} | {{{../txt/userguide/stress/tu_30_1}0}}, {{{../txt/userguide/stress/tu_30_2}1}}, {{{../txt/userguide/stress/tu_30_3}0}}, {{{../txt/userguide/stress/tu_30_4}0}}, {{{../txt/userguide/stress/tu_30_5}0}} | {{{../txt/userguide/stress/pr_30_1}-}}, {{{../txt/userguide/stress/pr_30_2}-}}, {{{../txt/userguide/stress/pr_30_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<PCG_MCG_XSH_RR_32>> | {{{../txt/userguide/stress/dh_31_1}0}}, {{{../txt/userguide/stress/dh_31_2}0}}, {{{../txt/userguide/stress/dh_31_3}0}}, {{{../txt/userguide/stress/dh_31_4}0}}, {{{../txt/userguide/stress/dh_31_5}0}} | {{{../txt/userguide/stress/tu_31_1}0}}, {{{../txt/userguide/stress/tu_31_2}0}}, {{{../txt/userguide/stress/tu_31_3}0}}, {{{../txt/userguide/stress/tu_31_4}0}}, {{{../txt/userguide/stress/tu_31_5}0}} | {{{../txt/userguide/stress/pr_31_1}-}}, {{{../txt/userguide/stress/pr_31_2}-}}, {{{../txt/userguide/stress/pr_31_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| PCG_MCG_XSH_RS_32 | {{{../txt/userguide/stress/dh_32_1}0}}, {{{../txt/userguide/stress/dh_32_2}0}}, {{{../txt/userguide/stress/dh_32_3}0}}, {{{../txt/userguide/stress/dh_32_4}0}}, {{{../txt/userguide/stress/dh_32_5}0}} | {{{../txt/userguide/stress/tu_32_1}2}}, {{{../txt/userguide/stress/tu_32_2}1}}, {{{../txt/userguide/stress/tu_32_3}0}}, {{{../txt/userguide/stress/tu_32_4}1}}, {{{../txt/userguide/stress/tu_32_5}0}} | {{{../txt/userguide/stress/pr_32_1}40}}, {{{../txt/userguide/stress/pr_32_2}41}}, {{{../txt/userguide/stress/pr_32_3}41}} (2 TiB) |
+*-----------------+------------+---------------------+-------------+
+| <<MSWS>> | {{{../txt/userguide/stress/dh_33_1}0}}, {{{../txt/userguide/stress/dh_33_2}0}}, {{{../txt/userguide/stress/dh_33_3}0}}, {{{../txt/userguide/stress/dh_33_4}0}}, {{{../txt/userguide/stress/dh_33_5}0}} | {{{../txt/userguide/stress/tu_33_1}0}}, {{{../txt/userguide/stress/tu_33_2}0}}, {{{../txt/userguide/stress/tu_33_3}0}}, {{{../txt/userguide/stress/tu_33_4}1}}, {{{../txt/userguide/stress/tu_33_5}2}} | {{{../txt/userguide/stress/pr_33_1}-}}, {{{../txt/userguide/stress/pr_33_2}-}}, {{{../txt/userguide/stress/pr_33_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<SFC_32>> | {{{../txt/userguide/stress/dh_34_1}0}}, {{{../txt/userguide/stress/dh_34_2}0}}, {{{../txt/userguide/stress/dh_34_3}0}}, {{{../txt/userguide/stress/dh_34_4}0}}, {{{../txt/userguide/stress/dh_34_5}0}} | {{{../txt/userguide/stress/tu_34_1}0}}, {{{../txt/userguide/stress/tu_34_2}0}}, {{{../txt/userguide/stress/tu_34_3}0}}, {{{../txt/userguide/stress/tu_34_4}1}}, {{{../txt/userguide/stress/tu_34_5}1}} | {{{../txt/userguide/stress/pr_34_1}-}}, {{{../txt/userguide/stress/pr_34_2}-}}, {{{../txt/userguide/stress/pr_34_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<SFC_64>> | {{{../txt/userguide/stress/dh_35_1}0}}, {{{../txt/userguide/stress/dh_35_2}0}}, {{{../txt/userguide/stress/dh_35_3}0}}, {{{../txt/userguide/stress/dh_35_4}0}}, {{{../txt/userguide/stress/dh_35_5}0}} | {{{../txt/userguide/stress/tu_35_1}0}}, {{{../txt/userguide/stress/tu_35_2}0}}, {{{../txt/userguide/stress/tu_35_3}0}}, {{{../txt/userguide/stress/tu_35_4}1}}, {{{../txt/userguide/stress/tu_35_5}2}} | {{{../txt/userguide/stress/pr_35_1}-}}, {{{../txt/userguide/stress/pr_35_2}-}}, {{{../txt/userguide/stress/pr_35_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<JSF_32>> | {{{../txt/userguide/stress/dh_36_1}0}}, {{{../txt/userguide/stress/dh_36_2}0}}, {{{../txt/userguide/stress/dh_36_3}0}}, {{{../txt/userguide/stress/dh_36_4}0}}, {{{../txt/userguide/stress/dh_36_5}0}} | {{{../txt/userguide/stress/tu_36_1}0}}, {{{../txt/userguide/stress/tu_36_2}0}}, {{{../txt/userguide/stress/tu_36_3}0}}, {{{../txt/userguide/stress/tu_36_4}1}}, {{{../txt/userguide/stress/tu_36_5}2}} | {{{../txt/userguide/stress/pr_36_1}-}}, {{{../txt/userguide/stress/pr_36_2}-}}, {{{../txt/userguide/stress/pr_36_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<JSF_64>> | {{{../txt/userguide/stress/dh_37_1}0}}, {{{../txt/userguide/stress/dh_37_2}0}}, {{{../txt/userguide/stress/dh_37_3}0}}, {{{../txt/userguide/stress/dh_37_4}0}}, {{{../txt/userguide/stress/dh_37_5}0}} | {{{../txt/userguide/stress/tu_37_1}0}}, {{{../txt/userguide/stress/tu_37_2}0}}, {{{../txt/userguide/stress/tu_37_3}2}}, {{{../txt/userguide/stress/tu_37_4}0}}, {{{../txt/userguide/stress/tu_37_5}0}} | {{{../txt/userguide/stress/pr_37_1}-}}, {{{../txt/userguide/stress/pr_37_2}-}}, {{{../txt/userguide/stress/pr_37_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<XO_SHI_RO_128_PP>> | {{{../txt/userguide/stress/dh_38_1}0}}, {{{../txt/userguide/stress/dh_38_2}0}}, {{{../txt/userguide/stress/dh_38_3}0}}, {{{../txt/userguide/stress/dh_38_4}0}}, {{{../txt/userguide/stress/dh_38_5}0}} | {{{../txt/userguide/stress/tu_38_1}0}}, {{{../txt/userguide/stress/tu_38_2}0}}, {{{../txt/userguide/stress/tu_38_3}0}}, {{{../txt/userguide/stress/tu_38_4}1}}, {{{../txt/userguide/stress/tu_38_5}1}} | {{{../txt/userguide/stress/pr_38_1}-}}, {{{../txt/userguide/stress/pr_38_2}-}}, {{{../txt/userguide/stress/pr_38_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<XO_RO_SHI_RO_128_PP>> | {{{../txt/userguide/stress/dh_39_1}0}}, {{{../txt/userguide/stress/dh_39_2}0}}, {{{../txt/userguide/stress/dh_39_3}0}}, {{{../txt/userguide/stress/dh_39_4}0}}, {{{../txt/userguide/stress/dh_39_5}0}} | {{{../txt/userguide/stress/tu_39_1}0}}, {{{../txt/userguide/stress/tu_39_2}0}}, {{{../txt/userguide/stress/tu_39_3}0}}, {{{../txt/userguide/stress/tu_39_4}0}}, {{{../txt/userguide/stress/tu_39_5}0}} | {{{../txt/userguide/stress/pr_39_1}-}}, {{{../txt/userguide/stress/pr_39_2}-}}, {{{../txt/userguide/stress/pr_39_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<XO_SHI_RO_256_PP>> | {{{../txt/userguide/stress/dh_40_1}0}}, {{{../txt/userguide/stress/dh_40_2}0}}, {{{../txt/userguide/stress/dh_40_3}0}}, {{{../txt/userguide/stress/dh_40_4}0}}, {{{../txt/userguide/stress/dh_40_5}0}} | {{{../txt/userguide/stress/tu_40_1}0}}, {{{../txt/userguide/stress/tu_40_2}1}}, {{{../txt/userguide/stress/tu_40_3}1}}, {{{../txt/userguide/stress/tu_40_4}0}}, {{{../txt/userguide/stress/tu_40_5}1}} | {{{../txt/userguide/stress/pr_40_1}-}}, {{{../txt/userguide/stress/pr_40_2}-}}, {{{../txt/userguide/stress/pr_40_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<XO_SHI_RO_512_PP>> | {{{../txt/userguide/stress/dh_41_1}0}}, {{{../txt/userguide/stress/dh_41_2}0}}, {{{../txt/userguide/stress/dh_41_3}0}}, {{{../txt/userguide/stress/dh_41_4}0}}, {{{../txt/userguide/stress/dh_41_5}0}} | {{{../txt/userguide/stress/tu_41_1}0}}, {{{../txt/userguide/stress/tu_41_2}0}}, {{{../txt/userguide/stress/tu_41_3}1}}, {{{../txt/userguide/stress/tu_41_4}0}}, {{{../txt/userguide/stress/tu_41_5}0}} | {{{../txt/userguide/stress/pr_41_1}-}}, {{{../txt/userguide/stress/pr_41_2}-}}, {{{../txt/userguide/stress/pr_41_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| <<XO_RO_SHI_RO_1024_PP>> | {{{../txt/userguide/stress/dh_42_1}0}}, {{{../txt/userguide/stress/dh_42_2}0}}, {{{../txt/userguide/stress/dh_42_3}0}}, {{{../txt/userguide/stress/dh_42_4}0}}, {{{../txt/userguide/stress/dh_42_5}0}} | {{{../txt/userguide/stress/tu_42_1}0}}, {{{../txt/userguide/stress/tu_42_2}0}}, {{{../txt/userguide/stress/tu_42_3}3}}, {{{../txt/userguide/stress/tu_42_4}0}}, {{{../txt/userguide/stress/tu_42_5}1}} | {{{../txt/userguide/stress/pr_42_1}-}}, {{{../txt/userguide/stress/pr_42_2}-}}, {{{../txt/userguide/stress/pr_42_3}-}} |
+*-----------------+------------+---------------------+-------------+
+| XO_RO_SHI_RO_1024_S | {{{../txt/userguide/stress/dh_43_1}0}}, {{{../txt/userguide/stress/dh_43_2}0}}, {{{../txt/userguide/stress/dh_43_3}0}}, {{{../txt/userguide/stress/dh_43_4}1}}, {{{../txt/userguide/stress/dh_43_5}0}} | {{{../txt/userguide/stress/tu_43_1}0}}, {{{../txt/userguide/stress/tu_43_2}1}}, {{{../txt/userguide/stress/tu_43_3}0}}, {{{../txt/userguide/stress/tu_43_4}0}}, {{{../txt/userguide/stress/tu_43_5}0}} | {{{../txt/userguide/stress/pr_43_1}33}}, {{{../txt/userguide/stress/pr_43_2}33}}, {{{../txt/userguide/stress/pr_43_3}33}} (8 GiB) |
+*-----------------+------------+---------------------+-------------+
+| <<XO_RO_SHI_RO_1024_SS>> | {{{../txt/userguide/stress/dh_44_1}0}}, {{{../txt/userguide/stress/dh_44_2}0}}, {{{../txt/userguide/stress/dh_44_3}0}}, {{{../txt/userguide/stress/dh_44_4}0}}, {{{../txt/userguide/stress/dh_44_5}0}} | {{{../txt/userguide/stress/tu_44_1}0}}, {{{../txt/userguide/stress/tu_44_2}1}}, {{{../txt/userguide/stress/tu_44_3}0}}, {{{../txt/userguide/stress/tu_44_4}0}}, {{{../txt/userguide/stress/tu_44_5}0}} | {{{../txt/userguide/stress/pr_44_1}-}}, {{{../txt/userguide/stress/pr_44_2}-}}, {{{../txt/userguide/stress/pr_44_3}-}} |
+*-----------------+------------+---------------------+-------------+
+
+
+6. Dependencies
+
+  Apache Commons RNG requires JDK 1.6+ and has no runtime dependencies.

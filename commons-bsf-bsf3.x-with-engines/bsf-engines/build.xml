@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+-->
+<project name="Engine-Installer">
+
+    <property name="download.dir" value="${basedir}/engines-download"/>
+    <property name="download.engines" value="${download.dir}/engines"/>
+    <property name="download.file" value="${download.dir}/engines.zip"/>
+    <property name="merged.engines.dir" value="${basedir}/target/merged-engines"/>
+
+    <target name="check-merged">
+        <condition property="already.merged" >
+           <and>
+              <available file="${basedir}/target/bsf-engines-${bsf.version}.jar"/>
+           </and>
+        </condition>
+
+    </target>
+
+    <target name="merge-engines" depends="check-merged, download-engines" unless="already.merged">
+
+        <mkdir dir="${download.dir}"/>
+        <unzip src="${download.file}" dest="${download.engines}" overwrite="true"/>
+
+        <!-- now unzip all the engine jars into a single directory -->
+
+        <mkdir dir="${merged.engines.dir}"/>
+        <unzip src="${download.engines}/beanshell/build/bsh-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <!-- unzip src="${download.engines}/browserjs/build/browserjs-engine.jar" dest="${merged.engines.dir}" overwrite="true"/ -->
+        <!-- unzip src="${download.engines}/ejs/build/js-engine.jar" dest="${merged.engines.dir}" overwrite="true"/ -->
+        <unzip src="${download.engines}/freemarker/build/freemarker-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/groovy/build/groovy-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jacl/build/jacl-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jaskell/build/jaskell-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/java/build/java-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/javascript/build/js-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jawk/build/jawk-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jelly/build/jelly-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jep/build/jep-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jexl/build/jexl-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jruby/build/jruby-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <!-- unzip src="${download.engines}/jst/build/jst-engine.jar" dest="${merged.engines.dir}" overwrite="true"/ -->
+        <unzip src="${download.engines}/judo/build/judo-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/juel/build/juel-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/jython/build/jython-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/ognl/build/ognl-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/pnuts/build/pnuts-jsr223.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/scheme/build/scheme-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/velocity/build/velocity-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/xpath/build/xpath-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+        <unzip src="${download.engines}/xslt/build/xslt-engine.jar" dest="${merged.engines.dir}" overwrite="true"/>
+
+        <!-- Copy in the META-INF files for services, LICENSE and NOTICE -->
+
+        <copy todir="${merged.engines.dir}" overwrite="true">
+           <fileset dir="${basedir}/src/main/resources"/>
+        </copy>
+
+        <!-- Now package all that up into a single jar -->
+
+        <jar destfile="${basedir}/target/bsf-engines.tmp.jar" basedir="${merged.engines.dir}">
+        </jar>
+
+        <!-- Delete work directory -->
+        <delete dir="${merged.engines.dir}" />
+
+        <!-- Use Retroweaver to convert all the classes to JDK 1.4 -->
+
+        <retroweaver inputjar="${basedir}/target/bsf-engines.tmp.jar" outputjar="${basedir}/target/bsf-engines-${bsf.version}.jar"/>
+
+        <!-- Delete the temporary work file -->
+        <delete file="${basedir}/target/bsf-engines.tmp.jar"/>
+
+    </target>
+
+    <taskdef name="retroweaver" classname="net.sourceforge.retroweaver.ant.RetroWeaverTask">
+       <classpath>
+          <pathelement location="${localRepository}/net/sourceforge/retroweaver/retroweaver/2.0.7/retroweaver-2.0.7.jar"/>
+          <pathelement location="${localRepository}/net/sourceforge/retroweaver/retroweaver-rt/2.0.7/retroweaver-rt-2.0.7.jar"/>
+          <pathelement location="${localRepository}/asm/asm/3.1/asm-3.1.jar"/>
+          <pathelement location="${localRepository}/asm/asm-commons/3.1/asm-commons-3.1.jar"/>
+          <pathelement location="${localRepository}/asm/asm-util/3.1/asm-util-3.1.jar"/>
+          <pathelement location="${localRepository}/backport-util-concurrent/backport-util-concurrent/2.2/backport-util-concurrent-2.2.jar"/>
+       </classpath>
+    </taskdef>
+
+    <target name="check-downloaded">
+        <condition property="already.downloaded" >
+           <and>
+              <available file="${download.file}"/>
+           </and>
+        </condition>
+
+        <!-- these are required for the mvn install command to work correctly -->
+        <condition property="maven.suffix" value="">
+            <os family="unix"/>
+        </condition>
+        <condition property="maven.suffix" value=".bat">
+            <os family="windows"/>
+        </condition>
+    </target>
+
+    <target name="download-engines" depends="check-downloaded" unless="already.downloaded">
+        <mkdir dir="${download.dir}"/>
+        <get src="https://scripting.dev.java.net/files/documents/4957/37593/jsr223-engines.zip"
+            dest="${download.file}"
+            verbose="true"
+            usetimestamp="false"/>
+        <unzip src="${download.file}"
+            dest="${download.engines}"
+            overwrite="false"/>
+    </target>
+
+</project>
